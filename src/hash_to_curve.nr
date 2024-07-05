@@ -1,30 +1,44 @@
+// Hash to curve
 type Point = (Field, Field);
 
-fn calc_msg_prime_output_length(msg_length: u64) -> u64 {
-    msg_length + 64 + 2 + 50 + 1
-}
+use dep::std::sha256;
 
+pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
 
-pub fn hash_to_curve(msg: str) -> Point {
-
-    // here input some unknown arrays of number
+    // here input some unknown number arrays
 
     // Step 1: u = hash_to_field(msg)
     let h2f = hash_to_field(msg);
     (0, 0)
 }
 
-fn hash_to_field(msg: str) -> Field {
-    let msg_prime = MsgPrime(msg);
-    println(msg);
+
+// Hash To Field
+fn hash_to_field<N>(msg: [u8; N]) -> Field {
+    let expand_message_xmd = ExpandMessageXmd(msg);
     0
 }
 
-fn MsgPrime(msg: str) -> Vec<u8> {
-    let msg = msg.as_bytes();
-    let msg_len = msg.len();
-    let output_len = calc_msg_prime_output_length(msg_len);
 
+// Expand Message Xmd
+fn calc_msg_prime_output_length(msg_length: u64) -> u64 {
+    msg_length + 64 + 2 + 50 + 1
+}
+
+fn ExpandMessageXmd<N>(msg: [u8; N]) -> [Field; 96] {
+    let msg_prime = MsgPrime(msg);
+
+    let b0 = HashMsgPrimeToB0(msg, msg_prime);
+    /*
+    let b1 = HashB(1);
+    let b2 = HashBi(2);
+    let b3 = HashBi(3);
+    */
+
+    [0; 96]
+}
+
+fn MsgPrime<N>(msg: [u8; N]) -> Vec<u8> {
     let z_pad = [0; 64];
     let lib_str = [0, 96];
     let dst_prime = [
@@ -39,7 +53,7 @@ fn MsgPrime(msg: str) -> Vec<u8> {
         msg_prime.push(z_pad[i])
     }
 
-    for i in 0..msg_len {
+    for i in 0..N {
         msg_prime.push(msg[i]);
     }
 
@@ -54,4 +68,14 @@ fn MsgPrime(msg: str) -> Vec<u8> {
     }
 
     msg_prime
+}
+
+fn HashMsgPrimeToB0<N, T>(msg: [u8; N], msg_prime: Vec<u8>) -> [u8; 256] {
+
+    //let arr = [1; msg_prime_len]
+    let bytes = [163, 117, 178, 149];
+    //let hasher = sha256::sha256_var(bytes, 4);
+
+
+    [0; 256]
 }
