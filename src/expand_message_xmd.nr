@@ -6,9 +6,9 @@ use crate::PADDING_SIZE;
 
 pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
     let msg_prime = MsgPrime(msg);
-    println(msg_prime);
 
-    let b0 = HashMsgPrimeToB0(msg, msg_prime);
+    let b0 = HashMsgPrimeToB0(msg_prime);
+    println(b0);
 
     [0; 96]
 }
@@ -46,8 +46,27 @@ fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
     msg_prime
 }
 
-fn HashMsgPrimeToB0<N, T>(msg: [u8; N], msg_prime: [u8; T]) -> [u8; 256] {
-    let hasher = sha256::sha256_var(msg_prime, T);
+fn num_to_bits(num: u8) -> [u8; 8] {
+    let mut bits: [u8; 8] = [0; 8];
+    let mut n = num;
+    for i in 0..8 {
+        bits[7 - i] = n & 1;
+        n = n >> 1;
+    }
+    bits
+}
 
-    [0; 256]
+fn HashMsgPrimeToB0<T>(msg_prime: [u8; T]) -> [u8; 32] {
+    let mut res = msg_prime;
+
+    for i in 0..T {
+        let byte = res[i];
+        res[i] = 0;
+
+        for j in 0..8 {
+            let jbit = (byte >> (7 - j)) & 1;
+            res[i] |= jbit << j;
+        }
+    }
+    sha256::sha256_var(res, T)
 }
