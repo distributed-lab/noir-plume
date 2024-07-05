@@ -5,10 +5,10 @@ use crate::MSG_LEN;
 use crate::PADDING_SIZE;
 
 pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
-    MsgPrime(msg);
-    //println(msg_prime);
+    let msg_prime = MsgPrime(msg);
+    println(msg_prime);
 
-    //let b0 = HashMsgPrimeToB0(msg, msg_prime);
+    let b0 = HashMsgPrimeToB0(msg, msg_prime);
 
     [0; 96]
 }
