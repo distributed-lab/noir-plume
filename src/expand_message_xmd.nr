@@ -14,7 +14,18 @@ pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
     let b2 = HashBi(2, b0, b1);
     let b3 = HashBi(3, b0, b2);
 
-    [0; 96]
+    // Or maybe reverse bits in bi
+    let mut out = [0 as u8; 96];
+    for i in 0..32 {
+        out[i] = b1[i];
+    }
+    for i in 0..32 {
+        out[32 + i] = b2[i];
+    }
+    for i in 0..32 {
+        out[64 + i] = b3[i];
+    }
+    out
 }
 
 fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
