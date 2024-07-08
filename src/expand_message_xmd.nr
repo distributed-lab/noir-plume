@@ -1,5 +1,5 @@
 // Expand Message Xmd
-use dep::std::sha256;
+use dep::std::sha256::sha256_var;
 
 use crate::constants::{
     MSG_LEN, PADDING_SIZE,
@@ -9,8 +9,10 @@ use crate::constants::{
 pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
     let msg_prime = MsgPrime(msg);
 
-    let b0 = sha256::sha256_var(msg_prime, msg_prime.len());
+    let b0 = sha256_var(msg_prime, msg_prime.len());
     let b1 = HashB(1, b0);
+    let b2 = HashBi(2, b0, b1);
+    let b3 = HashBi(3, b0, b2);
 
     [0; 96]
 }
@@ -48,6 +50,47 @@ fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
     msg_prime
 }
 
+fn HashB(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
+    assert(b_idx < 8);
+
+    let mut res = [0; NUM_PREIMAGE_BYTES];
+    for i in 0..32 {
+        res[i] = b[i];
+    }
+    res[32] = b_idx;
+
+    for i in 0..50 {
+        res[32 + 1 + i] = DST_PRIME[i];
+    }
+    sha256_var(res, NUM_PREIMAGE_BYTES)
+}
+
+fn HashBi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
+    assert(b_idx < 8);
+    
+    let mut res = [0 as u8; 32];
+    for i in 0..32 {
+        res[i] = b0[i] ^ b1[i];
+    }
+    HashB(b_idx, res)
+}
+
+/*
+fn StrXor<T>(a: [u8; T], b: [u8; T]) -> [u8; T] {
+    let mut res = [0 as u8; T];
+
+    for i in 0..T {
+        res[i] = 
+
+        for j in 0..8 {
+
+        }
+    }
+}
+*/
+
+
+// Test methods
 fn print_bits(num: u8) {
     print(num);
     print(" ");
@@ -63,19 +106,4 @@ fn rev_bits(num: u8) -> u8 {
         res |= (arr[i] & 1) as u64;
     }
     res as u8
-}
-
-fn HashB(b_idx: u8, b0: [u8; 32]) -> [u8; 32] {
-    assert(b_idx < 8);
-
-    let mut res = [0; NUM_PREIMAGE_BYTES];
-    for i in 0..32 {
-        res[i] = b0[i];
-    }
-    res[32] = b_idx;
-
-    for i in 0..50 {
-        res[32 + 1 + i] = DST_PRIME[i];
-    }
-    sha256::sha256_var(res, NUM_PREIMAGE_BYTES)
 }
