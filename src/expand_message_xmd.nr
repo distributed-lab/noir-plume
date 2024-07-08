@@ -1,14 +1,16 @@
 // Expand Message Xmd
 use dep::std::sha256;
 
-use crate::MSG_LEN;
-use crate::PADDING_SIZE;
+use crate::constants::{
+    MSG_LEN, PADDING_SIZE,
+    DST_PRIME, NUM_PREIMAGE_BYTES
+};
 
 pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
     let msg_prime = MsgPrime(msg);
 
-    let b0 = HashMsgPrimeToB0(msg_prime);
-    println(b0);
+    let b0 = sha256::sha256_var(msg_prime, msg_prime.len());
+    let b1 = HashB(1, b0);
 
     [0; 96]
 }
@@ -46,27 +48,34 @@ fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
     msg_prime
 }
 
-fn num_to_bits(num: u8) -> [u8; 8] {
-    let mut bits: [u8; 8] = [0; 8];
-    let mut n = num;
-    for i in 0..8 {
-        bits[7 - i] = n & 1;
-        n = n >> 1;
-    }
-    bits
+fn print_bits(num: u8) {
+    print(num);
+    print(" ");
+    println((num as Field).to_be_bits(8));
 }
 
-fn HashMsgPrimeToB0<T>(msg_prime: [u8; T]) -> [u8; 32] {
-    let mut res = msg_prime;
+fn rev_bits(num: u8) -> u8 {
+    let arr = (num as Field).to_le_bits(8);
+    let mut res: u64 = 0;
 
-    for i in 0..T {
-        let byte = res[i];
-        res[i] = 0;
-
-        for j in 0..8 {
-            let jbit = (byte >> (7 - j)) & 1;
-            res[i] |= jbit << j;
-        }
+    for i in 0..8 {
+        res <<= 1;
+        res |= (arr[i] & 1) as u64;
     }
-    sha256::sha256_var(res, T)
+    res as u8
+}
+
+fn HashB(b_idx: u8, b0: [u8; 32]) -> [u8; 32] {
+    assert(b_idx < 8);
+
+    let mut res = [0; NUM_PREIMAGE_BYTES];
+    for i in 0..32 {
+        res[i] = b0[i];
+    }
+    res[32] = b_idx;
+
+    for i in 0..50 {
+        res[32 + 1 + i] = DST_PRIME[i];
+    }
+    sha256::sha256_var(res, NUM_PREIMAGE_BYTES)
 }
