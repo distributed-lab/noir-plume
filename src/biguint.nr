@@ -44,19 +44,6 @@ impl BigUint {
         self.bytes
     }
 
-    // -1 - left bigger; 0 - equal; 1 - right bigger
-    pub fn cmp(self: Self, other: Self) -> i8 {
-        for i in 0..NUM_BYTES {
-            if self.bytes[i] < other.bytes[i] {
-                1
-            }
-            if self.bytes[i] > other.bytes[i] {
-                -1
-            }
-        }
-        0
-    }
-
     fn utils_adc(a: u8, b: u8, carry: u8) -> (u8, u8) {
         let ret = a as Field + b as Field + carry as Field;
         (ret as u8, (ret as u16 >> 8) as u8)
@@ -185,9 +172,9 @@ impl BigUint {
 
     // quotient, remainder
     pub fn div(self: Self, other: Self) -> (Self, Self) {
-        assert(BigUint::zero().cmp(other) == 0);
+        assert(!BigUint::zero().eq(other));
 
-        if self.cmp(other) == 1 {
+        if self.lt(other) {
             (BigUint::zero(), self)
         } else {
             let mut rem = self;
@@ -198,7 +185,7 @@ impl BigUint {
 
             for i in 0..NUM_BYTES*8 + 1 {
                 if i <= bit_diff {
-                    if rem.cmp(c) == -1 {
+                    if !rem.lt(c) {
                         rem = rem.sub(c);
                         quo = quo.shl(1).add(BigUint::one());
                     } else {
@@ -209,5 +196,22 @@ impl BigUint {
             }
             (quo, rem)
         }
+    }
+
+    pub fn eq(self: Self, other: Self) -> bool {
+        let mut is_eq = true;
+        for i in 0..NUM_BYTES {
+            is_eq = is_eq & (self.bytes[i] == other.bytes[i]);
+        }
+        is_eq
+    }
+
+    pub fn gt(self: Self, other: Self) -> bool {
+        let (diff, borrow) = self.sbb(other);
+        (borrow == 0) & !diff.eq(BigUint::zero())
+    }
+
+    pub fn lt(self: Self, other: Self) -> bool {
+        other.gt(self)
     }
 }

@@ -1,7 +1,7 @@
 use crate::expand_message_xmd::ExpandMessageXmd;
 use crate::constants::SECP256K1_PRIME;
 use dep::std::bigint::Secpk1Fq;
-use crate::bigint::BigUint;
+use crate::biguint::BigUint;
 
 fn hash_to_field<N>(msg: [u8; N]) -> Field {
     let expand_message_xmd = ExpandMessageXmd(msg);
@@ -34,17 +34,31 @@ let a = Secpk1Fq::from_le_bytes(
 
 fn BytesToRegisters(ui: [u8; 48]) -> [u64; 4] {
     // 48 bytes would not fit, so I decided to cut them off
-    let a = Secpk1Fq::from_le_bytes(
+    let a = BigUint::from_bytes(
         &[
-        ui[16], ui[17], ui[18], ui[19], ui[20], ui[21], ui[22], ui[23], ui[24], ui[25], ui[26], ui[27], ui[28], ui[29], ui[30], ui[31],
+        ui[0], ui[1], ui[2], ui[3], ui[4], ui[5], ui[6], ui[7],
+        ui[8], ui[9], ui[10], ui[11], ui[12], ui[13], ui[14], ui[15], ui[16], ui[17], ui[18],
+        ui[19], ui[20], ui[21], ui[22], ui[23], ui[24], ui[25], ui[26], ui[27], ui[28], ui[29], ui[30], ui[31],
         ui[32], ui[33], ui[34], ui[35], ui[36], ui[37], ui[38], ui[39], ui[40], ui[41],
         ui[42], ui[43], ui[44], ui[45], ui[46], ui[47]
     ]
     );
-    //println(a.to_le_bytes());
 
-    //let b = Secpk1Fq::from_le_bytes(SECP256K1_PRIME.to_le_bytes(32));
-    //println(b);
+    //let num = 5596462452035853824;
+    //println(num.to_le_bytes(8));
+    //println(SECP256K1_PRIME.to_le_bytes(48));
+
+    // let (_quo, rem) = a.div(BigUint::from_bytes(SECP256K1_PRIME.to_le_bytes(48)));
+    // println(rem);
+
+    /* // result
+    BigUint { bytes: [209, 183, 97, 60, 214, 194, 214, 182, 195,
+                      155, 69, 78, 87, 87, 179, 221, 212,
+                      54, 251, 82, 149, 2, 42, 29, 103,
+                      246, 236, 128, 174, 199, 173, 194, 220,
+                      174, 113, 204, 7, 242, 109, 180, 148,
+                      214, 155, 224, 231, 179, 153, 209] }
+    */
 
     /*
     13 % 5 = 3
