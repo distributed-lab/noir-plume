@@ -1,10 +1,6 @@
 // Expand Message Xmd
 use dep::std::sha256::sha256_var;
-
-use crate::constants::{
-    MSG_LEN, PADDING_SIZE,
-    DST_PRIME, NUM_PREIMAGE_BYTES
-};
+use crate::constants::{MSG_LEN, PADDING_SIZE, DST_PRIME, NUM_PREIMAGE_BYTES};
 
 pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
     let msg_prime = MsgPrime(msg);
@@ -78,7 +74,7 @@ fn HashB(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
 
 fn HashBi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
     assert(b_idx < 8);
-    
+
     let mut res = [0 as u8; 32];
     for i in 0..32 {
         res[i] = b0[i] ^ b1[i];
@@ -99,7 +95,6 @@ fn StrXor<T>(a: [u8; T], b: [u8; T]) -> [u8; T] {
     }
 }
 */
-
 
 // Test methods
 fn print_bits(num: u8) {
