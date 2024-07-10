@@ -1,8 +1,9 @@
 mod constants;
+mod biguint;
 mod hash_to_curve;
 mod hash_to_field;
 mod expand_message_xmd;
-mod biguint;
+mod map_to_curve;
 
 pub fn main(msg: [u8; constants::MSG_LEN]) {
     let _p = hash_to_curve::hash_to_curve(msg);
@@ -112,6 +113,30 @@ fn test_sbb1() {
 
     assert(diff.eq(BigUint::from_bytes(&[0xff; NUM_BYTES])));
     assert(borrow >> 7 == 1); // 7 = number of bits
+}
+
+#[test]
+fn test_mul1() {
+    let a = BigUint::from_bytes(&[2]);
+    let b = BigUint::from_bytes(&[3]);
+    let (lo, hi) = a.mul(b);
+    
+    assert(lo.eq(BigUint::from_bytes(&[6])));
+    assert(hi.eq(BigUint::zero()));
+}
+
+#[test]
+fn test_mul2() {
+    let a = BigUint { bytes: [0xff; NUM_BYTES] };
+    let b = a;
+    let (lo, hi) = a.mul(b);
+
+    let mut hi_expect = [0xff; NUM_BYTES];
+    hi_expect[0] = 0xfe;
+    let hi_expect = BigUint { bytes: hi_expect };
+
+    assert(lo.eq(BigUint::one()));
+    assert(hi.eq(hi_expect));
 }
 
 #[test]

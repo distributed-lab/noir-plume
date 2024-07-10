@@ -3,7 +3,7 @@ use crate::constants::SECP256K1_PRIME;
 use dep::std::bigint::Secpk1Fq;
 use crate::biguint::BigUint;
 
-pub fn hash_to_field<N>(msg: [u8; N]) -> [[u64; 4]; 2] {
+pub fn hash_to_field<N>(msg: [u8; N]) -> [[u8; 32]; 2] {
     let expand_message_xmd = ExpandMessageXmd(msg);
 
     let mut u0_bytes_to_registers = [0 as u8; 48];
@@ -19,7 +19,7 @@ pub fn hash_to_field<N>(msg: [u8; N]) -> [[u64; 4]; 2] {
     [u0_bytes_to_registers, u1_bytes_to_registers]
 }
 
-fn BytesToRegisters(ui: [u8; 48]) -> [u64; 4] {
+fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
     // Need to convert in Big Endian format
     let a = BigUint::from_bytes(
         &[
@@ -33,9 +33,14 @@ fn BytesToRegisters(ui: [u8; 48]) -> [u64; 4] {
     );
 
     let (_quo, rem) = a.div(BigUint::from_bytes(SECP256K1_PRIME));
-    let rem = rem.to_bytes();
+    rem.to_bytes_32()
 
+    // for [[u64; 4]; 2] output.
+    // I think it's better to save in byte format
+    
+    /*
     // Convertion from [u8; 8] to u64, Little Endian
+    
     let mut res = [0 as u64; 4];
     for i in 0..4 {
         for j in 0..8 {
@@ -43,4 +48,5 @@ fn BytesToRegisters(ui: [u8; 48]) -> [u64; 4] {
         }
     }
     res
+    */
 }

@@ -1,7 +1,5 @@
 use dep::std::wrapping_sub;
-
 global NUM_BYTES: u64 = 48;
-
 
 fn utils_adc(a: u8, b: u8, carry: u8) -> (u8, u8) {
     let ret = a as Field + b as Field + carry as Field;
@@ -39,10 +37,27 @@ impl BigUint {
         }
         res
     }
+
+    pub fn from_bytes_32(bytes: [u8; 32]) -> Self {
+        let mut res = BigUint::zero();
+        for i in 0..32 {
+            res.bytes[i] = bytes[i];
+        }
+        res
+    }
     
     pub fn to_bytes(self: Self) -> [u8; NUM_BYTES] {
         self.bytes
     }
+
+    pub fn to_bytes_32(self: Self) -> [u8; 32] {
+        let mut bytes = [0 as u8; 32];
+        for i in 0..32 {
+            bytes[i] = self.bytes[i];
+        }
+        bytes
+    }
+
 
     fn utils_adc(a: u8, b: u8, carry: u8) -> (u8, u8) {
         let ret = a as Field + b as Field + carry as Field;
@@ -89,6 +104,37 @@ impl BigUint {
     pub fn sub(self: Self, other: Self) -> Self {
         let (res, _borrow) = self.sbb(other);
         res
+    }
+
+    // Compute a + (b * c) + carry. Return (res, new_carry)
+    fn mac(a: u8, b: u8, c: u8, carry: u8) -> (u8, u8) {
+        let ret = (a as Field) + (b as Field) * (c as Field) + (carry as Field);
+        (ret as u8, (ret as u16 >> 8) as u8)
+    }
+
+    pub fn mul(self: Self, other: Self) -> (Self, Self) {
+        let mut lo = BigUint::zero();
+        let mut hi = BigUint::zero();
+
+        for i in 0..NUM_BYTES {
+            let mut carry = 0 as u8;
+
+            for j in 0..NUM_BYTES {
+                let k = i + j;
+
+                if k >= NUM_BYTES {
+                    let (n, c) = BigUint::mac(hi.bytes[k - NUM_BYTES], self.bytes[i], other.bytes[j], carry);
+                    hi.bytes[k - NUM_BYTES] = n;
+                    carry = c;
+                } else {
+                    let (n, c) = BigUint::mac(lo.bytes[k], self.bytes[i], other.bytes[j], carry);
+                    lo.bytes[k] = n;
+                    carry = c;
+                }
+            }
+            hi.bytes[i] = carry;
+        }
+        (lo, hi)
     }
 
     // most significant bit
@@ -170,32 +216,6 @@ impl BigUint {
         res.bytes[NUM_BYTES - 1] = self.bytes[NUM_BYTES - 1] >> 1;
         res
     }
-
-    /*
-    pub fn div(self: Self, other: Self) -> (Self, Self) {
-        assert(!BigUint::zero().eq(other));
-
-        if self.lt(other) {
-            (BigUint::zero(), self);
-        } else {
-            let mut rem = self;
-            let mut quo = BigUint::zero();
-
-            let bit_diff = self.nbits() - other.nbits();
-            let mut c = other.shl(bit_diff);
-
-            for i in 0..bit_diff {
-                if 
-                if rem.ge(&c) {
-                    rem = rem.sub(&c);
-                    quo = quo.add(&BigUint::one().shl(i));
-                }
-                c = c.shr(1);
-            }
-            (quo, rem)
-        }
-    }
-    */
 
     // quotient, remainder
     pub fn div(self: Self, other: Self) -> (Self, Self) {

@@ -27,12 +27,6 @@ pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
 fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
     let z_pad = [0; 64];
     let lib_str = [0, 96];
-    let dst_prime = [
-        81, 85, 85, 88, 45, 86, 48, 49, 45, 67, 83, 48, 50, 45, 119, 105, 116,
-        104, 45, 115, 101, 99, 112, 50, 53, 54, 107, 49, 95, 88, 77, 68, 58,
-        83, 72, 65, 45, 50, 53, 54, 95, 83, 83, 87, 85, 95, 82, 79, 95, 49
-    ];
-
     let mut msg_prime = [0 as u8; MSG_LEN + PADDING_SIZE];
 
     for i in 0..64 {
@@ -51,7 +45,7 @@ fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
 
     // msg_prme = z_pad || msg || lib_str || 0 || dst_prime
     for i in 0..50 {
-        msg_prime[64 + MSG_LEN + 2 + 1 + i] = dst_prime[i];
+        msg_prime[64 + MSG_LEN + 2 + 1 + i] = DST_PRIME[i];
     }
 
     msg_prime
@@ -82,7 +76,7 @@ fn HashBi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
     HashB(b_idx, res)
 }
 
-// Unneсessary test methods
+// Test methods
 // Maybe need to delete later
 fn print_bits(num: u8) {
     print(num);
