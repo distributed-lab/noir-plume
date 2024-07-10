@@ -3,7 +3,7 @@ use crate::constants::SECP256K1_PRIME;
 use dep::std::bigint::Secpk1Fq;
 use crate::biguint::BigUint;
 
-fn hash_to_field<N>(msg: [u8; N]) -> Field {
+pub fn hash_to_field<N>(msg: [u8; N]) -> [[u64; 4]; 2] {
     let expand_message_xmd = ExpandMessageXmd(msg);
 
     let mut u0_bytes_to_registers = [0 as u8; 48];
@@ -14,36 +14,33 @@ fn hash_to_field<N>(msg: [u8; N]) -> Field {
         u1_bytes_to_registers[i] = expand_message_xmd[48 + i];
     }
 
-    //println(u1_bytes_to_registers);
-
-    // let u0_bytes_to_registers = BytesToRegisters(u0_bytes_to_registers);
+    let u0_bytes_to_registers = BytesToRegisters(u0_bytes_to_registers);
     let u1_bytes_to_registers = BytesToRegisters(u1_bytes_to_registers);
-
-    0
+    [u0_bytes_to_registers, u1_bytes_to_registers]
 }
 
 fn BytesToRegisters(ui: [u8; 48]) -> [u64; 4] {
-    // 48 bytes would not fit, so I decided to cut them off
+    // Need to convert in Big Endian format
     let a = BigUint::from_bytes(
         &[
-        ui[0], ui[1], ui[2], ui[3], ui[4], ui[5], ui[6], ui[7],
-        ui[8], ui[9], ui[10], ui[11], ui[12], ui[13], ui[14], ui[15], ui[16], ui[17], ui[18],
-        ui[19], ui[20], ui[21], ui[22], ui[23], ui[24], ui[25], ui[26], ui[27], ui[28], ui[29], ui[30], ui[31],
-        ui[32], ui[33], ui[34], ui[35], ui[36], ui[37], ui[38], ui[39], ui[40], ui[41],
-        ui[42], ui[43], ui[44], ui[45], ui[46], ui[47]
+        ui[47], ui[46], ui[45], ui[44], ui[43], ui[42], ui[41], ui[40],
+        ui[39], ui[38], ui[37], ui[36], ui[35], ui[34], ui[33], ui[32],
+        ui[31], ui[30], ui[29], ui[28], ui[27], ui[26], ui[25], ui[24],
+        ui[23], ui[22], ui[21], ui[20], ui[19], ui[18], ui[17], ui[16],
+        ui[15], ui[14], ui[13], ui[12], ui[11], ui[10], ui[9], ui[8],
+        ui[7], ui[6], ui[5], ui[4], ui[3], ui[2], ui[1], ui[0],
     ]
     );
 
     let (_quo, rem) = a.div(BigUint::from_bytes(SECP256K1_PRIME));
-    println(rem);
+    let rem = rem.to_bytes();
 
-    /* // result. Consistent with python tests, but not with circom
-    BigUint { bytes: [253, 169, 77, 85, 84, 30, 239, 89,
-                      230, 50, 225, 191, 190, 188, 186, 203,
-                      96, 78, 80, 47, 164, 181, 149, 168,
-                      19, 208, 253, 203, 206, 13, 49, 111,
-                      0, 0, 0, 0, 0, 0, 0, 0,
-                      0, 0, 0, 0, 0, 0, 0, 0] }
-    */
-    [0; 4]
+    // Convertion from [u8; 8] to u64, Little Endian
+    let mut res = [0 as u64; 4];
+    for i in 0..4 {
+        for j in 0..8 {
+            res[i] += (256 as Field).pow_32(j as Field) as u64 * rem[i*8 + j] as u64;
+        }
+    }
+    res
 }
