@@ -14,23 +14,13 @@ fn hash_to_field<N>(msg: [u8; N]) -> Field {
         u1_bytes_to_registers[i] = expand_message_xmd[48 + i];
     }
 
+    //println(u1_bytes_to_registers);
+
     // let u0_bytes_to_registers = BytesToRegisters(u0_bytes_to_registers);
     let u1_bytes_to_registers = BytesToRegisters(u1_bytes_to_registers);
 
     0
 }
-
-/*
-let a = Secpk1Fq::from_le_bytes(
-        &[
-        ui[0], ui[1], ui[2], ui[3], ui[4], ui[5], ui[6], ui[7],
-        ui[8], ui[9], ui[10], ui[11], ui[12], ui[13], ui[14], ui[15], ui[16], ui[17], ui[18],
-        ui[19], ui[20], ui[21], ui[22], ui[23], ui[24], ui[25], ui[26], ui[27], ui[28], ui[29], ui[30], ui[31],
-        ui[32], ui[33], ui[34], ui[35], ui[36], ui[37], ui[38], ui[39], ui[40], ui[41],
-        ui[42], ui[43], ui[44], ui[45], ui[46], ui[47]
-    ]
-    );
-*/
 
 fn BytesToRegisters(ui: [u8; 48]) -> [u64; 4] {
     // 48 bytes would not fit, so I decided to cut them off
@@ -44,38 +34,16 @@ fn BytesToRegisters(ui: [u8; 48]) -> [u64; 4] {
     ]
     );
 
-    //let num = 5596462452035853824;
-    //println(num.to_le_bytes(8));
-    //println(SECP256K1_PRIME.to_le_bytes(48));
+    let (_quo, rem) = a.div(BigUint::from_bytes(SECP256K1_PRIME));
+    println(rem);
 
-    // let (_quo, rem) = a.div(BigUint::from_bytes(SECP256K1_PRIME.to_le_bytes(48)));
-    // println(rem);
-
-    /* // result
-    BigUint { bytes: [209, 183, 97, 60, 214, 194, 214, 182, 195,
-                      155, 69, 78, 87, 87, 179, 221, 212,
-                      54, 251, 82, 149, 2, 42, 29, 103,
-                      246, 236, 128, 174, 199, 173, 194, 220,
-                      174, 113, 204, 7, 242, 109, 180, 148,
-                      214, 155, 224, 231, 179, 153, 209] }
+    /* // result. Consistent with python tests, but not with circom
+    BigUint { bytes: [253, 169, 77, 85, 84, 30, 239, 89,
+                      230, 50, 225, 191, 190, 188, 186, 203,
+                      96, 78, 80, 47, 164, 181, 149, 168,
+                      19, 208, 253, 203, 206, 13, 49, 111,
+                      0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0] }
     */
-
-    /*
-    13 % 5 = 3
-    13 / 5 = 2
-    2 * 5 = 10
-    13 - 10 = 3
-
-    a / b = c
-    c * b = d
-    a - a / b * b == a % b
-    */
-
-    /*
-    let a = 13 as u64;
-    let b = 5 as u64;
-    println(a - (a / b) * b);
-    */
-
     [0; 4]
 }

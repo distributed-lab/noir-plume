@@ -10,7 +10,6 @@ pub fn main(msg: [u8; constants::MSG_LEN]) {
     // println(p.1);
 }
 
-
 // Tests
 use crate::biguint::BigUint;
 use crate::biguint::NUM_BYTES;
@@ -56,7 +55,6 @@ fn test_to_bytes1() {
     let c = a.sub(b);
     assert(c.to_bytes() == [0xff; NUM_BYTES]);
 }
-
 
 #[test]
 fn test_add1() {
@@ -113,7 +111,7 @@ fn test_sbb1() {
     let (diff, borrow) = a.sbb(b);
 
     assert(diff.eq(BigUint::from_bytes(&[0xff; NUM_BYTES])));
-    assert(borrow >> 7 == 1);  // 7 = number of bits
+    assert(borrow >> 7 == 1); // 7 = number of bits
 }
 
 #[test]
@@ -184,7 +182,6 @@ fn test_shl5() {
     assert(b.eq(BigUint::from_bytes(&[2])));
 }
 
-
 #[test]
 fn test_shl6() {
     let a = BigUint::from_bytes(&[0x80]);
@@ -192,7 +189,6 @@ fn test_shl6() {
 
     assert(b.eq(BigUint::from_bytes(&[0, 1])));
 }
-
 
 #[test]
 fn test_shr() {
@@ -239,7 +235,6 @@ fn test_msb4() {
 
     assert(b == 11);
 }
-
 
 #[test]
 fn test_div1() {

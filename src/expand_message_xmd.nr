@@ -82,21 +82,8 @@ fn HashBi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
     HashB(b_idx, res)
 }
 
-/*
-fn StrXor<T>(a: [u8; T], b: [u8; T]) -> [u8; T] {
-    let mut res = [0 as u8; T];
-
-    for i in 0..T {
-        res[i] = 
-
-        for j in 0..8 {
-
-        }
-    }
-}
-*/
-
-// Test methods
+// Unneсessary test methods
+// Maybe need to delete later
 fn print_bits(num: u8) {
     print(num);
     print(" ");
