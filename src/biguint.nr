@@ -91,15 +91,16 @@ impl BigUint {
         res
     }
 
+    // most significant bit
+    pub fn msb(self: Self) -> u64 {
+        let mut res = 0;
 
-    pub fn nbits(self: Self) -> u64 {
-        let mut res = 0 as u64;
-        
         for i in 0..NUM_BYTES {
             let bits = (self.bytes[i] as Field).to_le_bits(8);
-
             for j in 0..8 {
-                res += bits[j] as u64;
+                if bits[j] == 1 {
+                    res = i*8 + j + 1;
+                }
             }
         }
         res
@@ -170,6 +171,32 @@ impl BigUint {
         res
     }
 
+    /*
+    pub fn div(self: Self, other: Self) -> (Self, Self) {
+        assert(!BigUint::zero().eq(other));
+
+        if self.lt(other) {
+            (BigUint::zero(), self);
+        } else {
+            let mut rem = self;
+            let mut quo = BigUint::zero();
+
+            let bit_diff = self.nbits() - other.nbits();
+            let mut c = other.shl(bit_diff);
+
+            for i in 0..bit_diff {
+                if 
+                if rem.ge(&c) {
+                    rem = rem.sub(&c);
+                    quo = quo.add(&BigUint::one().shl(i));
+                }
+                c = c.shr(1);
+            }
+            (quo, rem)
+        }
+    }
+    */
+
     // quotient, remainder
     pub fn div(self: Self, other: Self) -> (Self, Self) {
         assert(!BigUint::zero().eq(other));
@@ -180,16 +207,16 @@ impl BigUint {
             let mut rem = self;
             let mut quo = BigUint::zero();
 
-            let bit_diff = self.nbits() - other.nbits();
+            let bit_diff = self.msb() - other.msb();
             let mut c = other.shl(bit_diff);
 
-            for i in 0..NUM_BYTES*8 + 1 {
+            for i in 0..(NUM_BYTES*8 + 1) {
                 if i <= bit_diff {
-                    if !rem.lt(c) {
-                        rem = rem.sub(c);
-                        quo = quo.shl(1).add(BigUint::one());
+                    if rem.lt(c) {
+                        quo = quo.shl1();
                     } else {
-                        quo = quo.shl(1);
+                        rem = rem.sub(c);
+                        quo = quo.shl1().add(BigUint::one());
                     }
                     c = c.shr1();
                 }

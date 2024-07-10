@@ -209,35 +209,35 @@ fn test_shr() {
 }
 
 #[test]
-fn test_bits1() {
+fn test_msb1() {
     let a = BigUint::from_bytes(&[0]);
-    let b = a.nbits();
+    let b = a.msb();
 
     assert(b == 0);
 }
 
 #[test]
-fn test_bits2() {
+fn test_msb2() {
     let a = BigUint::from_bytes(&[1]);
-    let b = a.nbits();
+    let b = a.msb();
 
     assert(b == 1);
 }
 
 #[test]
-fn test_bits3() {
+fn test_msb3() {
     let a = BigUint::from_bytes(&[0xff]);
-    let b = a.nbits();
+    let b = a.msb();
 
     assert(b == 8);
 }
 
 #[test]
-fn test_bits4() {
+fn test_msb4() {
     let a = BigUint::from_bytes(&[1, 5]);
-    let b = a.nbits();
+    let b = a.msb();
 
-    assert(b == 3);
+    assert(b == 11);
 }
 
 
@@ -254,25 +254,27 @@ fn test_div1() {
 
 #[test]
 fn test_div2() {
-    let a = BigUint::from_bytes(&[7]);
-    let b = BigUint::from_bytes(&[8]);
+    // 7 + 256*2 + 256*256*3
+    let a = BigUint::from_bytes(&[7, 2, 3]);
+    let b = BigUint::from_bytes(&[7, 2, 3]);
 
     let (q, r) = a.div(b);
 
-    assert(q.eq(BigUint::from_bytes(&[0])));
-    assert(r.eq(BigUint::from_bytes(&[7])));
+    assert(q.eq(BigUint::one()));
+    assert(r.eq(BigUint::zero()));
 }
 
 // Failed
 #[test]
 fn test_div3() {
-    let a = BigUint::from_bytes(&[2, 0, 1, 0, 0]);
-    let b = BigUint::from_bytes(&[0, 1, 0, 0, 0]);
+    // (256*256 + 2)/256 = (256, 2)
+    let a = BigUint::from_bytes(&[2, 0, 1]);
+    let b = BigUint::from_bytes(&[0, 1]);
 
     let (q, r) = a.div(b);
 
-    assert(q.eq(BigUint::from_bytes(&[0, 1, 0, 0, 0])));
-    assert(r.eq(BigUint::from_bytes(&[2, 0, 0, 0, 0])));
+    assert(q.eq(BigUint::from_bytes(&[0, 1])));
+    assert(r.eq(BigUint::from_bytes(&[2])));
 }
 
 #[test]
@@ -284,4 +286,16 @@ fn test_div4() {
 
     assert(q.eq(BigUint::from_bytes(&[7])));
     assert(r.eq(BigUint::from_bytes(&[0])));
+}
+
+#[test]
+fn test_div5() {
+    // 7 + 256*2 + 256*256*3
+    let a = BigUint::from_bytes(&[7, 2, 3]);
+    let b = BigUint::from_bytes(&[0, 0, 0, 1]);
+
+    let (q, r) = a.div(b);
+
+    assert(q.eq(BigUint::zero()));
+    assert(r.eq(BigUint::from_bytes(&[7, 2, 3])));
 }
