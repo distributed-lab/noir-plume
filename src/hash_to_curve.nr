@@ -8,7 +8,7 @@ pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
     // Step 1: u = hash_to_field(msg)
     // Unfortunately need to much computations (more than 2 minutes of compilation)
     // let h2f = hash_to_field(msg);
-    
+
     let h2f: [[u8; 32]; 2] = [
         [
             97, 43, 138, 176, 151, 243, 115, 72,
@@ -23,7 +23,7 @@ pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
             168, 149, 181, 163, 93, 182, 151, 88
         ]
     ];
-    
+
     println(h2f);
 
     // Step2: Q0 = map_to_curve(u[0])

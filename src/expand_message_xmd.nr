@@ -99,11 +99,10 @@ fn rev_bits(num: u8) -> u8 {
 
 // Tests
 #[test]
-fn tests_expand_message_xmd() {
-    // "abc" message
+fn test_MsgPrime() {
     let msg = [97, 98, 99];
-    let msg_prime = MsgPrime(msg);
 
+    let msg_prime = MsgPrime(msg);
     let expected_msg_prime = [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -114,6 +113,19 @@ fn tests_expand_message_xmd() {
         95, 82, 79, 95, 49
     ];
     assert(msg_prime == expected_msg_prime);
+}
+
+#[test]
+fn test_b0() {
+    let msg_prime = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 97, 98,
+        99, 0, 96, 0, 81, 85, 85, 88, 45, 86, 48, 49, 45, 67, 83, 48, 50,
+        45, 119, 105, 116, 104, 45, 115, 101, 99, 112, 50, 53, 54, 107, 49,
+        95, 88, 77, 68, 58, 83, 72, 65, 45, 50, 53, 54, 95, 83, 83, 87, 85,
+        95, 82, 79, 95, 49
+    ];
 
     let b0 = sha256_var(msg_prime, msg_prime.len());
     let expected_b0 = [
@@ -122,6 +134,15 @@ fn tests_expand_message_xmd() {
         127, 169
     ];
     assert(b0 == expected_b0);
+}
+
+#[test]
+fn test_b1() {
+    let b0 = [
+        99, 4, 75, 36, 124, 254, 65, 234, 207, 65, 212, 122, 206, 186, 87,
+        48, 157, 28, 243, 255, 59, 178, 30, 40, 136, 85, 202, 99, 135, 177,
+        127, 169
+    ];
 
     let b1 = HashB(1, b0);
     let expected_b1 = [
@@ -130,6 +151,20 @@ fn tests_expand_message_xmd() {
         81, 208
     ];
     assert(b1 == expected_b1);
+}
+
+#[test]
+fn test_b2() {
+    let b0 = [
+        99, 4, 75, 36, 124, 254, 65, 234, 207, 65, 212, 122, 206, 186, 87,
+        48, 157, 28, 243, 255, 59, 178, 30, 40, 136, 85, 202, 99, 135, 177,
+        127, 169
+    ];
+    let b1 = [
+        232, 52, 124, 173, 72, 171, 78, 49, 157, 123, 39, 85, 32, 234, 129,
+        207, 18, 138, 171, 93, 54, 121, 161, 247, 96, 30, 59, 222, 172, 154,
+        81, 208
+    ];
 
     let b2 = HashBi(2, b0, b1);
     let expected_b2 = [
@@ -138,6 +173,19 @@ fn tests_expand_message_xmd() {
         255
     ];
     assert(b2 == expected_b2);
+}
+
+#[test]
+fn test_b3() {
+    let b0 = [
+        99, 4, 75, 36, 124, 254, 65, 234, 207, 65, 212, 122, 206, 186, 87,
+        48, 157, 28, 243, 255, 59, 178, 30, 40, 136, 85, 202, 99, 135, 177,
+        127, 169
+    ];
+    let b2 = [
+        197, 77, 255, 208, 84, 39, 78, 219, 36, 136, 85, 230, 17, 144, 196, 98,
+        167, 187, 97, 236, 186, 142, 64, 10, 154, 118, 213, 174, 1, 78, 135, 255
+    ];
 
     let b3 = HashBi(3, b0, b2);
     let expected_b3 = [
@@ -146,6 +194,12 @@ fn tests_expand_message_xmd() {
         179, 153, 209
     ];
     assert(b3 == expected_b3);
+}
+
+#[test]
+fn tests_expand_message_xmd() {
+    // "abc" message
+    let msg = [97, 98, 99];
 
     let expand_message_xmd = ExpandMessageXmd(msg);
     let expected_expand_message_xmd = [
