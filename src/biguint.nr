@@ -149,6 +149,28 @@ impl BigUint {
         (lo, hi)
     }
 
+    /* 
+    Use simple binary search algorithm
+    The code is specialized, so here used 32*8 iterations.
+    For more general code, you should replace
+    the number of iterations with NUM_BYTES * 8 and use extend_mul (not necessary) instead of regular mul.
+    If we have hi part, then sqrt lower than current part
+    */
+    pub fn sqrt(self: Self) -> Self {
+        let mut res = self;
+        if self.eq(BigUint::zero()) | self.eq(BigUint::one()) {
+            res
+        } else {
+            // Replace .div(2) operation
+            res = res.shr1();
+
+            for i in 0..256 {
+                // for [a; b], if b - a == 1, then stop (or smth similar)
+            }
+            res
+        }
+    }
+
     // most significant bit
     pub fn msb(self: Self) -> u64 {
         let mut res = 0;
