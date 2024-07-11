@@ -12,3 +12,4 @@ pub fn MapToCurve(u: [u8; 32]) -> Field {
     // Step 2
     0
 }
+

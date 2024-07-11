@@ -52,7 +52,6 @@ fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
 }
 
 
-// Tests
 #[test]
 fn test_u0_bytes_to_registers() {
     let u0_bytes = [

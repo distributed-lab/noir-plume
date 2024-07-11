@@ -97,7 +97,6 @@ fn rev_bits(num: u8) -> u8 {
 }
 
 
-// Tests
 #[test]
 fn test_MsgPrime() {
     let msg = [97, 98, 99];

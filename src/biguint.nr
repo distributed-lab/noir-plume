@@ -255,7 +255,6 @@ impl BigUint {
 }
 
 
-// Tests
 #[test]
 fn test_from_bytes1() {
     // let bytes = [2 as u8];
@@ -335,7 +334,6 @@ fn test_sub1() {
     assert(diff.eq(BigUint::from_bytes(&[2])));
 }
 
-// Maybe bad test
 #[test]
 fn test_sub2() {
     let a = BigUint::from_bytes(&[1, 2, 0, 0, 0]);
@@ -345,7 +343,6 @@ fn test_sub2() {
     assert(diff.eq(BigUint::from_bytes(&[0xff, 1])));
 }
 
-// Maybe bad test
 #[test]
 fn test_sbb1() {
     let a = BigUint::from_bytes(&[1, 0, 0, 0, 0]);
@@ -525,7 +522,6 @@ fn test_div2() {
     assert(r.eq(BigUint::zero()));
 }
 
-// Failed
 #[test]
 fn test_div3() {
     // (256*256 + 2)/256 = (256, 2)
