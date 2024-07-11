@@ -24,10 +24,8 @@ pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
         ]
     ];
 
-    println(h2f);
-
     // Step2: Q0 = map_to_curve(u[0])
-    let mut m2c_q0 = MapToCurve(h2f[0]);
+    // let mut m2c_q0 = MapToCurve(h2f[0]);
 
     (0, 0)
 }

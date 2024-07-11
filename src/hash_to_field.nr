@@ -32,7 +32,7 @@ fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
     ]
     );
 
-    let (_quo, rem) = a.div(BigUint::from_bytes(SECP256K1_PRIME));
+    let rem = a.div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
     rem.to_bytes_32()
 
     // for [[u64; 4]; 2] output.

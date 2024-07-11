@@ -273,6 +273,42 @@ impl BigUint {
     pub fn lt(self: Self, other: Self) -> bool {
         other.gt(self)
     }
+
+    fn egcd(mut self: Self, mut b: BigUint) -> (Self, Self, Self) {
+        let mut x0 = BigUint::zero();
+        let mut x1 = BigUint::one();
+        let mut y0 = BigUint::one();
+        let mut y1 = BigUint::zero();
+
+        // 256 - max iterations
+        for _ in 0..256 {
+            if !self.eq(BigUint::zero()) {
+                let (quo, rem) = b.div(self);
+                b = self;
+                self = rem;
+
+                let x_temp = x1;
+                x1 = x0.sub(quo.mul(x1));
+                x0 = x_temp;
+
+                let y_temp = y1;
+                y1 = y0.sub(quo.mul(y1));
+                y0 = y_temp;
+            }
+        }
+        (b, x0, y0)
+    }
+
+    // Модульна інверсія
+    pub fn mod_mul_inv(self: Self, p: Self) -> Self {
+        let (g, x, _) = self.egcd(p);
+        if g.eq(BigUint::one()) {
+            x.div(p.add(p)).1
+        } else {
+            assert(false);
+            BigUint::zero()
+        }
+    }
 }
 
 
@@ -394,7 +430,6 @@ fn test_mul2() {
 
     let mut expected_bytes = [0xff; NUM_BYTES];
     expected_bytes[0] = 240;
-
     assert(res.to_bytes() == expected_bytes);
 }
 
