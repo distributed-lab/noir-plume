@@ -23,6 +23,7 @@ pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
             168, 149, 181, 163, 93, 182, 151, 88
         ]
     ];
+    
     println(h2f);
 
     // Step2: Q0 = map_to_curve(u[0])

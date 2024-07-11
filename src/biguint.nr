@@ -1,5 +1,8 @@
 use dep::std::wrapping_sub;
+
+// Must be divisible by 4, for word, i.e. u32 type
 global NUM_BYTES: u64 = 48;
+
 
 fn utils_adc(a: u8, b: u8, carry: u8) -> (u8, u8) {
     let ret = a as Field + b as Field + carry as Field;
@@ -10,6 +13,12 @@ fn utils_sbb(a: u8, b: u8, borrow: u8) -> (u8, u8) {
     // 7 = number of bits -1
     let ret = wrapping_sub(a as u16, b as u16 + (borrow as u16 >> 7));
     (ret as u8, (ret >> 8) as u8)
+}
+
+// Compute a + (b * c) + carry. Return (res, new_carry)
+fn utils_mac(a: u8, b: u8, c: u8, carry: u8) -> (u8, u8) {
+    let ret = (a as Field) + (b as Field) * (c as Field) + (carry as Field);
+    (ret as u8, (ret as u16 >> 8) as u8)
 }
 
 
@@ -58,12 +67,6 @@ impl BigUint {
         bytes
     }
 
-
-    fn utils_adc(a: u8, b: u8, carry: u8) -> (u8, u8) {
-        let ret = a as Field + b as Field + carry as Field;
-        (ret as u8, (ret as u16 >> 8) as u8)
-    }
-
     fn adc(self: Self, other: Self) -> (Self, u8) {
         let mut res = BigUint::zero();
         let mut carry = 0 as u8;
@@ -80,13 +83,6 @@ impl BigUint {
     pub fn add(self: Self, other: Self) -> Self {
         let (res, _carry) = self.adc(other);
         res
-    }
-
-    
-    fn utils_sbb(a: u8, b: u8, borrow: u8) -> (u8, u8) {
-        // 7 = number of bits -1
-        let ret = wrapping_sub(a as u16, b as u16 + (borrow as u16 >> 7));
-        (ret as u8, (ret >> 8) as u8)
     }
 
     fn sbb(self: Self, other: Self) -> (Self, u8) {
@@ -106,12 +102,7 @@ impl BigUint {
         res
     }
 
-    // Compute a + (b * c) + carry. Return (res, new_carry)
-    fn mac(a: u8, b: u8, c: u8, carry: u8) -> (u8, u8) {
-        let ret = (a as Field) + (b as Field) * (c as Field) + (carry as Field);
-        (ret as u8, (ret as u16 >> 8) as u8)
-    }
-
+    // low, high result
     pub fn mul(self: Self, other: Self) -> (Self, Self) {
         let mut lo = BigUint::zero();
         let mut hi = BigUint::zero();
@@ -123,11 +114,11 @@ impl BigUint {
                 let k = i + j;
 
                 if k >= NUM_BYTES {
-                    let (n, c) = BigUint::mac(hi.bytes[k - NUM_BYTES], self.bytes[i], other.bytes[j], carry);
+                    let (n, c) = utils_mac(hi.bytes[k - NUM_BYTES], self.bytes[i], other.bytes[j], carry);
                     hi.bytes[k - NUM_BYTES] = n;
                     carry = c;
                 } else {
-                    let (n, c) = BigUint::mac(lo.bytes[k], self.bytes[i], other.bytes[j], carry);
+                    let (n, c) = utils_mac(lo.bytes[k], self.bytes[i], other.bytes[j], carry);
                     lo.bytes[k] = n;
                     carry = c;
                 }
@@ -261,4 +252,311 @@ impl BigUint {
     pub fn lt(self: Self, other: Self) -> bool {
         other.gt(self)
     }
+}
+
+
+// Tests
+#[test]
+fn test_from_bytes1() {
+    // let bytes = [2 as u8];
+    let a = BigUint::from_bytes(&[2]);
+
+    assert(
+        a.eq(
+            BigUint {
+        bytes: [
+            2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ]
+    }
+        )
+    );
+}
+
+#[test]
+fn test_from_bytes2() {
+    // 7 bytes of 0xff
+    let a = BigUint::from_bytes(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+    assert(
+        a.eq(
+            BigUint {
+        bytes: [
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ]
+    }
+        )
+    );
+}
+
+#[test]
+fn test_to_bytes1() {
+    let a = BigUint::zero();
+    let b = BigUint::one();
+
+    let c = a.sub(b);
+    assert(c.to_bytes() == [0xff; NUM_BYTES]);
+}
+
+#[test]
+fn test_add1() {
+    let a = BigUint::from_bytes(&[1]);
+    let b = BigUint::from_bytes(&[2]);
+    let sum = a.add(b);
+
+    assert(sum.eq(BigUint::from_bytes(&[3])));
+}
+
+#[test]
+fn test_add2() {
+    let a = BigUint::from_bytes(&[0xff, 0xff, 0xff, 0xff, 0]);
+    let b = BigUint::from_bytes(&[1, 0, 0, 0, 0]);
+    let sum = a.add(b);
+
+    assert(sum.eq(BigUint::from_bytes(&[0, 0, 0, 0, 1])));
+}
+
+#[test]
+fn test_adc1() {
+    let a = BigUint { bytes: [0xff; NUM_BYTES] };
+    let b = BigUint::one();
+    let (sum, carry) = a.adc(b);
+
+    assert(sum.eq(BigUint::zero()));
+    assert(carry == 1);
+}
+
+#[test]
+fn test_sub1() {
+    let a = BigUint::from_bytes(&[5]);
+    let b = BigUint::from_bytes(&[3]);
+    let diff = a.sub(b);
+
+    assert(diff.eq(BigUint::from_bytes(&[2])));
+}
+
+// Maybe bad test
+#[test]
+fn test_sub2() {
+    let a = BigUint::from_bytes(&[1, 2, 0, 0, 0]);
+    let b = BigUint::from_bytes(&[2, 0, 0, 0, 0]);
+    let diff = a.sub(b);
+
+    assert(diff.eq(BigUint::from_bytes(&[0xff, 1])));
+}
+
+// Maybe bad test
+#[test]
+fn test_sbb1() {
+    let a = BigUint::from_bytes(&[1, 0, 0, 0, 0]);
+    let b = BigUint::from_bytes(&[2, 0, 0, 0, 0]);
+    let (diff, borrow) = a.sbb(b);
+
+    assert(diff.eq(BigUint::from_bytes(&[0xff; NUM_BYTES])));
+    assert(borrow >> 7 == 1); // 7 = number of bits
+}
+
+#[test]
+fn test_mul1() {
+    let a = BigUint::from_bytes(&[2]);
+    let b = BigUint::from_bytes(&[3]);
+    let (lo, hi) = a.mul(b);
+    
+    assert(lo.eq(BigUint::from_bytes(&[6])));
+    assert(hi.eq(BigUint::zero()));
+}
+
+#[test]
+fn test_mul2() {
+    let a = BigUint { bytes: [0xff; NUM_BYTES] };
+    let b = a;
+    let (lo, hi) = a.mul(b);
+
+    let mut hi_expect = [0xff; NUM_BYTES];
+    hi_expect[0] = 0xfe;
+    let hi_expect = BigUint { bytes: hi_expect };
+
+    assert(lo.eq(BigUint::one()));
+    assert(hi.eq(hi_expect));
+}
+
+#[test]
+fn test_cmp1() {
+    let a = BigUint::from_bytes(&[2, 0]);
+    let b = BigUint::from_bytes(&[0, 2]);
+
+    assert(!a.eq(b));
+
+    assert(a.lt(b));
+    assert(!a.gt(b));
+}
+
+#[test]
+fn test_cmp2() {
+    let a = BigUint::from_bytes(&[0, 2]);
+    let b = BigUint::from_bytes(&[0, 2]);
+
+    assert(a.eq(b));
+
+    assert(!a.lt(b));
+    assert(!a.gt(b));
+}
+
+#[test]
+fn test_shl1() {
+    let a = BigUint::from_bytes(&[1, 2]);
+    let b = a.shl(0);
+
+    assert(a.eq(b));
+}
+
+#[test]
+fn test_shl2() {
+    let a = BigUint::from_bytes(&[1, 2]);
+    let b = a.shl(NUM_BYTES * 8);
+
+    assert(b.eq(BigUint::zero()));
+}
+
+#[test]
+fn test_shl3() {
+    let a = BigUint::from_bytes(&[1, 2]);
+    let b = a.shl(1);
+
+    let bytes = b.to_bytes();
+
+    let mut expected = [0 as u8; NUM_BYTES];
+    expected[0] = 2;
+    expected[1] = 4;
+
+    assert(bytes == expected);
+}
+
+#[test]
+fn test_shl4() {
+    let a = BigUint::from_bytes(&[1, 2]);
+    let b = a.shl(8);
+
+    assert(b.eq(BigUint::from_bytes(&[0, 1, 2])));
+}
+
+#[test]
+fn test_shl5() {
+    let a = BigUint::from_bytes(&[1]);
+    let b = a.shl1();
+
+    assert(b.eq(BigUint::from_bytes(&[2])));
+}
+
+#[test]
+fn test_shl6() {
+    let a = BigUint::from_bytes(&[0x80]);
+    let b = a.shl1();
+
+    assert(b.eq(BigUint::from_bytes(&[0, 1])));
+}
+
+#[test]
+fn test_shr() {
+    let a = BigUint::from_bytes(&[2, 4]);
+    let b = a.shr1();
+
+    let bytes = b.to_bytes();
+
+    let mut expected = [0 as u8; NUM_BYTES];
+    expected[0] = 1;
+    expected[1] = 2;
+
+    assert(bytes == expected);
+}
+
+#[test]
+fn test_msb1() {
+    let a = BigUint::from_bytes(&[0]);
+    let b = a.msb();
+
+    assert(b == 0);
+}
+
+#[test]
+fn test_msb2() {
+    let a = BigUint::from_bytes(&[1]);
+    let b = a.msb();
+
+    assert(b == 1);
+}
+
+#[test]
+fn test_msb3() {
+    let a = BigUint::from_bytes(&[0xff]);
+    let b = a.msb();
+
+    assert(b == 8);
+}
+
+#[test]
+fn test_msb4() {
+    let a = BigUint::from_bytes(&[1, 5]);
+    let b = a.msb();
+
+    assert(b == 11);
+}
+
+#[test]
+fn test_div1() {
+    let a = BigUint::from_bytes(&[7]);
+    let b = BigUint::from_bytes(&[3]);
+
+    let (q, r) = a.div(b);
+
+    assert(q.eq(BigUint::from_bytes(&[2])));
+    assert(r.eq(BigUint::from_bytes(&[1])));
+}
+
+#[test]
+fn test_div2() {
+    // 7 + 256*2 + 256*256*3
+    let a = BigUint::from_bytes(&[7, 2, 3]);
+    let b = BigUint::from_bytes(&[7, 2, 3]);
+
+    let (q, r) = a.div(b);
+
+    assert(q.eq(BigUint::one()));
+    assert(r.eq(BigUint::zero()));
+}
+
+// Failed
+#[test]
+fn test_div3() {
+    // (256*256 + 2)/256 = (256, 2)
+    let a = BigUint::from_bytes(&[2, 0, 1]);
+    let b = BigUint::from_bytes(&[0, 1]);
+
+    let (q, r) = a.div(b);
+
+    assert(q.eq(BigUint::from_bytes(&[0, 1])));
+    assert(r.eq(BigUint::from_bytes(&[2])));
+}
+
+#[test]
+fn test_div4() {
+    let a = BigUint::from_bytes(&[7]);
+    let b = BigUint::from_bytes(&[1]);
+
+    let (q, r) = a.div(b);
+
+    assert(q.eq(BigUint::from_bytes(&[7])));
+    assert(r.eq(BigUint::from_bytes(&[0])));
+}
+
+#[test]
+fn test_div5() {
+    // 7 + 256*2 + 256*256*3
+    let a = BigUint::from_bytes(&[7, 2, 3]);
+    let b = BigUint::from_bytes(&[0, 0, 0, 1]);
+
+    let (q, r) = a.div(b);
+
+    assert(q.eq(BigUint::zero()));
+    assert(r.eq(BigUint::from_bytes(&[7, 2, 3])));
 }

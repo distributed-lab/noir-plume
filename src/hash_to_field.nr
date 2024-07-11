@@ -50,3 +50,6 @@ fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
     res
     */
 }
+
+
+//
