@@ -1,6 +1,7 @@
+// Based on the code https://github.com/shuklaayush/noir-bigint
 use dep::std::wrapping_sub;
 
-// Must be divisible by 4, for word, i.e. u32 type
+// Calculations are performed within this number of bytes. You can change the number to suit your needs
 global NUM_BYTES: u64 = 48;
 
 
@@ -102,8 +103,28 @@ impl BigUint {
         res
     }
 
-    // low, high result
-    pub fn mul(self: Self, other: Self) -> (Self, Self) {
+    // The result of mul function is expected to be less than NUM_BYTES
+    pub fn mul(self: Self, other: Self) -> Self {
+        let mut res = BigUint::zero();
+
+        for i in 0..NUM_BYTES {
+            let mut carry = 0 as u8;
+
+            for j in 0..NUM_BYTES {
+                let k = i + j;
+
+                if k < NUM_BYTES {
+                    let (n, c) = utils_mac(res.bytes[k], self.bytes[i], other.bytes[j], carry);
+                    res.bytes[k] = n;
+                    carry = c;
+                }
+            }
+        }
+        res
+    }
+
+    // low, high results
+    pub fn extend_mul(self: Self, other: Self) -> (Self, Self) {
         let mut lo = BigUint::zero();
         let mut hi = BigUint::zero();
 
@@ -355,19 +376,43 @@ fn test_sbb1() {
 
 #[test]
 fn test_mul1() {
+    let a = BigUint::from_bytes(&[0xe]);
+    let b = BigUint::from_bytes(&[8]);
+    let res = a.mul(b);
+
+    assert(res.eq(BigUint::from_bytes(&[0x70])));
+}
+
+#[test]
+fn test_mul2() {
+    let mut bytes = [0xff as u8; NUM_BYTES];
+    bytes[NUM_BYTES-1] = 15;
+
+    let a = BigUint { bytes };
+    let b = BigUint::from_bytes(&[16]);
+    let res = a.mul(b);
+
+    let mut expected_bytes = [0xff; NUM_BYTES];
+    expected_bytes[0] = 240;
+
+    assert(res.to_bytes() == expected_bytes);
+}
+
+#[test]
+fn test_extend_mul1() {
     let a = BigUint::from_bytes(&[2]);
     let b = BigUint::from_bytes(&[3]);
-    let (lo, hi) = a.mul(b);
+    let (lo, hi) = a.extend_mul(b);
     
     assert(lo.eq(BigUint::from_bytes(&[6])));
     assert(hi.eq(BigUint::zero()));
 }
 
 #[test]
-fn test_mul2() {
+fn test_extend_mul2() {
     let a = BigUint { bytes: [0xff; NUM_BYTES] };
     let b = a;
-    let (lo, hi) = a.mul(b);
+    let (lo, hi) = a.extend_mul(b);
 
     let mut hi_expect = [0xff; NUM_BYTES];
     hi_expect[0] = 0xfe;
