@@ -56,7 +56,6 @@ impl BigUint {
         res
     }
 
-    // TODO: Need to check!!!
     pub fn from_bytes_32(bytes: [u8; 32]) -> Self {
         let mut res = BigUint::zero();
         for i in 0..32 {
@@ -175,7 +174,7 @@ impl BigUint {
         (lo, hi)
     }
 
-    /* 
+    /* TODO: Implement
     Use simple binary search algorithm
     The code is specialized, so here used 32*8 iterations.
     For more general code, you should replace
@@ -197,8 +196,6 @@ impl BigUint {
         }
     }
 
-    // most significant bit
-    // TODO: Maybe need more tests
     pub fn msb(self: Self) -> u64 {
         let mut res = 0;
 
@@ -213,7 +210,7 @@ impl BigUint {
         res
     }
 
-    // Shift by 0 <= n < 8 bits
+    // Shift by 0 <= n < BITS_PER_BLOCK bits
     fn shl_block(self: Self, n: u8) -> (Self, u32) {
         assert(n < BITS_PER_BLOCK as u8);
 
@@ -233,8 +230,7 @@ impl BigUint {
     // Simplify shl_byte function
     fn shl1(self: Self) -> Self {
         let mut res = self;
-        let rshift = (BITS_PER_BLOCK - 1) as u8; // 8 - 1
-        // let carry = self.blocks[NUM_BLOCKS - 1] >> rshift;
+        let rshift = (BITS_PER_BLOCK - 1) as u8;
 
         res.blocks[0] = self.blocks[0] << 1;
         for i in 1..NUM_BLOCKS {
@@ -256,10 +252,7 @@ impl BigUint {
                     res.blocks[i] = self.blocks[i as u64 - shift_num];
                 }
             }
-
             res = res.shl_block(rem as u8).0;
-            //let (new_lower, _carry) = res.shl_block(rem as u8);
-            //res = new_lower;
         }
         res
     }
@@ -275,7 +268,7 @@ impl BigUint {
         res
     }
 
-    // quotient, remainder
+    // (quotient, remainder)
     pub fn div(self: Self, other: Self) -> (Self, Self) {
         assert(!BigUint::zero().eq(other));
 
@@ -288,30 +281,21 @@ impl BigUint {
             let bit_diff = self.msb() - other.msb();
             let mut c = other.shl(bit_diff);
 
-            for i in 0..(NUM_BYTES*8 + 1) {
-                if i <= bit_diff {
-                    if rem.lt(c) {
-                        quo = quo.shl1();
-                    } else {
-                        rem = rem.sub(c);
-                        quo = quo.shl1().add(BigUint::one());
-                    }
-                    c = c.shr1();
+            for _ in 0..bit_diff+1 {
+                if rem.lt(c) {
+                    quo = quo.shl1();
+                } else {
+                    rem = rem.sub(c);
+                    quo = quo.shl1().add(BigUint::one());
                 }
+                c = c.shr1();
             }
             (quo, rem)
         }
     }
 
     pub fn eq(self: Self, other: Self) -> bool {
-        //let mut is_eq = true;
         self.blocks == other.blocks
-        /*
-        for i in 0..NUM_BLOCKS {
-            is_eq = is_eq & (self.bytes[i] == other.bytes[i]);
-        }
-        is_eq
-        */
     }
 
     pub fn gt(self: Self, other: Self) -> bool {
@@ -323,6 +307,7 @@ impl BigUint {
         other.gt(self)
     }
 
+    // Too long, killed by OS
     fn egcd(mut self: Self, mut b: BigUint) -> (Self, Self, Self) {
         let mut x0 = BigUint::zero();
         let mut x1 = BigUint::one();
@@ -331,24 +316,33 @@ impl BigUint {
 
         // 256 - max iterations
         for _ in 0..256 {
+            print(_);
+            print(" ");
+
             if !self.eq(BigUint::zero()) {
                 let (quo, rem) = b.div(self);
                 b = self;
                 self = rem;
 
-                let x_temp = x1;
-                x1 = x0.sub(quo.mul(x1));
-                x0 = x_temp;
-
-                let y_temp = y1;
-                y1 = y0.sub(quo.mul(y1));
-                y0 = y_temp;
+                let (new_x1, new_y1) = (x0.sub(quo.mul(x1)), y0.sub(quo.mul(y1)));
+                x0 = new_x1;
+                y0 = new_y1;
             }
         }
         (b, x0, y0)
     }
 
-    // Модульна інверсія
+    // Recurse  more than 1000 times
+    fn extended_gcd(self: Self, b: Self) -> (Self, Self, Self) {
+        print("0 ");
+        if b.eq(BigUint::zero()) {
+            (self, BigUint::one(), BigUint::zero())
+        } else {
+            let (gcd, x1, y1) = b.extended_gcd(self.div(b).1);
+            (gcd, y1, x1.sub(self.div(b).0.mul(y1)))
+        }
+    }
+
     pub fn mod_mul_inv(self: Self, p: Self) -> Self {
         let (g, x, _) = self.egcd(p);
         if g.eq(BigUint::one()) {
@@ -415,6 +409,24 @@ fn test_to_bytes1() {
 
     let c = a.sub(b);
     assert(c.to_bytes() == [0xff; NUM_BYTES]);
+}
+
+#[test]
+fn test_to_bytes_32_1() {
+    let a = BigUint::from_bytes_32([
+        0, 158, 104, 228, 242, 160, 170, 77,
+        4, 139, 81, 3, 106, 231, 27, 83,
+        220, 149, 200, 117, 204, 253, 208, 19,
+        168, 149, 181, 163, 93, 182, 151, 88
+    ]);
+
+    let expected_bytes = [
+        0, 158, 104, 228, 242, 160, 170, 77,
+        4, 139, 81, 3, 106, 231, 27, 83,
+        220, 149, 200, 117, 204, 253, 208, 19,
+        168, 149, 181, 163, 93, 182, 151, 88
+    ];
+    assert(a.to_bytes_32() == expected_bytes);
 }
 
 #[test]
