@@ -5,6 +5,9 @@ mod hash_to_field;
 mod expand_message_xmd;
 mod map_to_curve;
 
+// For tests
+// use crate::biguint::BigUint;
+
 pub fn main(msg: [u8; constants::MSG_LEN]) {
     //let _p = hash_to_curve::hash_to_curve(msg);
     // println(p.0);

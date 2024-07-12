@@ -174,28 +174,6 @@ impl BigUint {
         (lo, hi)
     }
 
-    /* TODO: Implement
-    Use simple binary search algorithm
-    The code is specialized, so here used 32*8 iterations.
-    For more general code, you should replace
-    the number of iterations with NUM_BYTES * 8 and use extend_mul (not necessary) instead of regular mul.
-    If we have hi part, then sqrt lower than current part
-    */
-    pub fn sqrt(self: Self) -> Self {
-        let mut res = self;
-        if self.eq(BigUint::zero()) | self.eq(BigUint::one()) {
-            res
-        } else {
-            // Replace .div(2) operation
-            res = res.shr1();
-
-            for i in 0..256 {
-                // for [a; b], if b - a == 1, then stop (or smth similar)
-            }
-            res
-        }
-    }
-
     pub fn msb(self: Self) -> u64 {
         let mut res = 0;
 
@@ -291,6 +269,43 @@ impl BigUint {
                 c = c.shr1();
             }
             (quo, rem)
+        }
+    }
+
+    /* TODO: Implement
+    Use simple binary search algorithm
+    The code is specialized, so here used 32*8 iterations.
+    For more general code, you should replace
+    the number of iterations with NUM_BYTES * 8 and use extend_mul (not necessary) instead of regular mul.
+    If we have hi part, then sqrt lower than current part
+    */
+    pub fn sqrt(self: Self) -> Self {
+        let mut mid = self;
+        if self.eq(BigUint::zero()) | self.eq(BigUint::one()) {
+            mid
+        } else {
+            let mut lo = BigUint::zero();
+            let mut hi = BigUint::from_bytes_32([0xff; 32]);
+            let mut done = false;
+
+            for _ in 0..256 {
+                if !done {
+                    // shr1 replace .div(2) operation
+                    mid = lo.add(hi).shr1();
+                    let sq = mid.mul(mid);
+
+                    if sq.eq(self) | lo.gt(hi) | lo.eq(hi) {
+                        done = true;
+                    } else {
+                        if sq.lt(self) {
+                            lo = mid;
+                        } else {
+                            hi = mid.sub(BigUint::one());
+                        }
+                    }
+                }
+            }
+            mid
         }
     }
 
@@ -716,4 +731,47 @@ fn test_div5() {
 
     assert(q.eq(BigUint::zero()));
     assert(r.eq(BigUint::from_bytes(&[7, 2, 3])));
+}
+
+#[test]
+fn test_sqrt1() {
+    let a = BigUint::from_bytes(&[0, 0, 0, 0, 1]);
+    let expected_sqrt = BigUint::from_bytes(&[0, 0, 1]);
+    assert(a.sqrt().eq(expected_sqrt));
+}
+
+#[test]
+fn test_sqrt2() {
+    let num = BigUint::from_bytes_32(
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 104, 203, 127, 80, 204, 48, 33, 247, 218, 52, 195, 241, 198]
+    );
+    let expected_sqrt = BigUint::from_bytes_32(
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 136, 82, 99, 169, 29, 173, 225, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    );
+    assert(num.sqrt().eq(expected_sqrt));
+    assert(expected_sqrt.mul(expected_sqrt).eq(num));
+}
+
+// TODO: Failed
+#[test]
+fn test_sqrt3() {
+    // If not precise square
+    let num = BigUint::from_bytes_32([
+        84, 131, 32, 9, 152, 117, 67, 219,
+        205, 41, 62, 115, 54, 121, 56, 101,
+        148, 26, 32, 216, 170, 246, 39, 251,
+        3, 35, 247, 218, 52, 195, 241, 198
+    ]);
+
+    let expected_sqrt = BigUint::from_bytes_32(
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 136, 82, 99, 169, 29, 173, 225, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    );
+    assert(num.sqrt().eq(expected_sqrt));
+}
+
+#[test]
+fn test_sqrt4() {
+    let a = BigUint::from_bytes(&[1, 0, 0, 0, 1]);
+    let expected_sqrt = BigUint::from_bytes(&[0, 0, 1]);
+    assert(a.sqrt().eq(expected_sqrt));
 }
