@@ -1,9 +1,12 @@
 // Based on the code https://github.com/shuklaayush/noir-bigint
 use dep::std::wrapping_sub;
 
-// But not more than 256/8 bytes, otherwise bit shift doesn't work properly
-global BYTES_PER_BLOCK: u64 = 4;
+// Note: If you need a different number of bytes, change only this variable
 global NUM_BLOCKS: u64 = 24;
+
+// Fixed value for u32 blocks arrary,
+// Can optimize to 256/8 = 16 bytes, otherwise bit shift doesn't work properly
+global BYTES_PER_BLOCK: u64 = 4;
 
 global NUM_BYTES: u64 = NUM_BLOCKS * BYTES_PER_BLOCK;
 global BITS_PER_BLOCK: u64 = BYTES_PER_BLOCK * 8;
@@ -188,6 +191,10 @@ impl BigUint {
         res
     }
 
+    pub fn is_even(self: Self) -> bool {
+        self.blocks[0] & 1 == 1
+    }
+
     // Shift by 0 <= n < BITS_PER_BLOCK bits
     fn shl_block(self: Self, n: u8) -> (Self, u32) {
         assert(n < BITS_PER_BLOCK as u8);
@@ -280,12 +287,14 @@ impl BigUint {
     If we have hi part, then sqrt lower than current part
     */
     pub fn sqrt(self: Self) -> Self {
+        assert(BigUint::from_bytes_32([0xff; 32]).gte(self));
         let mut mid = self;
+
         if self.eq(BigUint::zero()) | self.eq(BigUint::one()) {
             mid
         } else {
             let mut lo = BigUint::zero();
-            let mut hi = BigUint::from_bytes_32([0xff; 32]);
+            let mut hi = mid;
             let mut done = false;
 
             for _ in 0..256 {
@@ -294,11 +303,11 @@ impl BigUint {
                     mid = lo.add(hi).shr1();
                     let sq = mid.mul(mid);
 
-                    if sq.eq(self) | lo.gt(hi) | lo.eq(hi) {
+                    if sq.eq(self) | lo.gt(hi) {
                         done = true;
                     } else {
                         if sq.lt(self) {
-                            lo = mid;
+                            lo = mid.add(BigUint::one());
                         } else {
                             hi = mid.sub(BigUint::one());
                         }
@@ -316,6 +325,10 @@ impl BigUint {
     pub fn gt(self: Self, other: Self) -> bool {
         let (diff, borrow) = self.sbb(other);
         (borrow == 0) & !diff.eq(BigUint::zero())
+    }
+
+    pub fn gte(self: Self, other: Self) -> bool {
+        self.sbb(other).1 == 0
     }
 
     pub fn lt(self: Self, other: Self) -> bool {
