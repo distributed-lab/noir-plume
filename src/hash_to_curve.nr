@@ -5,7 +5,7 @@ type Point = (Field, Field);
 pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
     // here input some unknown number arrays
 
-    // Step 1: u = hash_to_field(msg)
+    // Step 1. u = hash_to_field(msg)
     // Unfortunately need to much computations (more than 2 minutes of compilation)
     // let h2f = hash_to_field(msg);
 
@@ -24,8 +24,41 @@ pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
         ]
     ];
 
-    // Step2: Q0 = map_to_curve(u[0])
-    // let mut m2c_q0 = MapToCurve(h2f[0]);
+    // Step 2. Q0 = map_to_curve(u[0])
+    // let mut (q0_x, q0_y) = MapToCurve(h2f[0]);
+
+    let q0_x = [
+        215, 34, 83, 138, 195, 143, 59, 82,
+        216, 218, 186, 187, 204, 4, 102, 67,
+        34, 23, 169, 179, 209, 87, 152, 177,
+        95, 132, 38, 212, 50, 148, 221, 7
+    ];
+    let q0_y = [
+        63, 179, 46, 18, 103, 164, 20, 64,
+        237, 27, 175, 187, 35, 229, 224, 203,
+        11, 85, 184, 144, 213, 187, 119, 50,
+        254, 207, 56, 81, 239, 136, 69, 96
+    ];
+
+    // Step 3. Q0 = map_to_curve(u[1])
+    // let mut (q1_x, q1_y) = MapToCurve(h2f[1]);
+
+    let q1_x = [
+        120, 31, 50, 101, 252, 100, 135, 184,
+        30, 73, 248, 5, 172, 141, 107, 4,
+        130, 39, 24, 108, 224, 81, 231, 221,
+        119, 78, 93, 209, 148, 151, 239, 233
+    ];
+    let q1_y = [
+        179, 23, 247, 231, 232, 159, 145, 18,
+        240, 65, 170, 20, 99, 215, 45, 86,
+        92, 69, 113, 200, 226, 110, 35, 191,
+        20, 83, 13, 103, 83, 206, 7, 203
+    ];
+
+    // Step 4. Result = IsoMap(Q0) + IsoMap(Q1)
+    // + here - PointAdd on EC
+    // let mut 
 
     (0, 0)
 }

@@ -4,7 +4,7 @@ use crate::constants::{
 };
 
 // For now I don't know the output format
-pub fn MapToCurve(u: [u8; 32]) -> (BigUint, BigUint) {
+pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     // ? - don't know how to implement now
 
     // Step 1. tv1 = (Z * u^2) % p 
@@ -69,7 +69,7 @@ pub fn MapToCurve(u: [u8; 32]) -> (BigUint, BigUint) {
     // step 21. y = e3 ? y : -y
     // Res y = (p - y) % p
     let y = if big_u.is_even() == y.is_even() { y } else { y.negative() };
-    (x, p.sub(y).div(p).1)
+    (x.to_bytes_32(), p.sub(y).div(p).1.to_bytes_32())
 }
 
 pub fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (BigUint, BigUint) {
@@ -250,6 +250,6 @@ fn test_MapToCurve() {
         254, 207, 56, 81, 239, 136, 69, 96
     ];
     
-    assert(x.to_bytes_32() == expected_x);
-    assert(y.to_bytes_32() == expected_y);
+    assert(x == expected_x);
+    assert(y == expected_y);
 }
