@@ -19,6 +19,15 @@ pub fn MapToCurve(u: [u8; 32]) -> (BigUint, BigUint) {
     // Step 4. x1 = inv0(x1) - modular multiplicative inverse
     let x1 = tv1.add(tv2).div(p).1.mod_mul_inv(p);
 
+    /*
+    let x1 = BigUint::from_bytes(&[
+        211, 142, 221, 78, 176, 90, 13, 18,
+        140, 253, 186, 38, 111, 230, 156, 220,
+        55, 89, 204, 218, 31, 162, 175, 33,
+        15, 146, 219, 86, 70, 80, 101, 19
+    ]);
+    */
+
     // Step 5. eq = x1 == 0
     // Step 6. x1 += 1
     // Step 7. x1 = CMOV(x1, c2, e1)
@@ -77,15 +86,6 @@ pub fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (Big
         (x2, gx2)
     }
 }
-
-// CMov method from SECP lib
-// return c == 1 ? b : a
-/*
-fn ternary_op(a, b, c) -> {
-
-}
-*/
-
 
 #[test]
 fn test_tv1() {
@@ -158,6 +158,7 @@ fn test_step_3() {
     assert(x1.to_bytes_32() == expected_x1);
 }
 
+// Failed
 // Frozes the OS. Too hard for compiler
 #[test]
 fn test_steps_4_5() {
@@ -179,9 +180,10 @@ fn test_steps_4_5() {
     assert(inv_x1.to_bytes_32() == expected_inv_x1);
 }
 
+// TODO: Need to know the expected result
 #[test]
 fn test_x1() {
-    // x1 = mod_mul_inv(x1) + 1
+    // x1 += 1
     // x1 = (x1 * c1) % p
     let x1 = BigUint::from_bytes_32([
         211, 142, 221, 78, 176, 90, 13, 18,
@@ -193,7 +195,6 @@ fn test_x1() {
     let x1 = x1.add(BigUint::one());
     let x1 = x1.mul(BigUint::from_bytes_32(C1)).div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
 
-    // TODO: Need to know the expected result
     let expected_x1 = [
         0 as u8; 32
     ];
@@ -222,4 +223,33 @@ fn test_XY2Selector_2() {
     let actual = XY2Selector(x1, x2, gx1, gx2);
     assert(actual.0.eq(x2));
     assert(actual.1.eq(gx2));
+}
+
+// Failed
+// Frozes the OS
+#[test]
+fn test_MapToCurve() {
+    let u0_bytes = [
+        97, 43, 138, 176, 151, 243, 115, 72,
+        138, 225, 103, 71, 84, 31, 73, 62,
+        244, 209, 206, 148, 223, 59, 30, 96,
+        247, 161, 121, 54, 93, 171, 138, 18
+    ];
+
+    let (x, y) = MapToCurve(u0_bytes);
+    let expected_x = [
+        215, 34, 83, 138, 195, 143, 59, 82,
+        216, 218, 186, 187, 204, 4, 102, 67,
+        34, 23, 169, 179, 209, 87, 152, 177,
+        95, 132, 38, 212, 50, 148, 221, 7
+    ];
+    let expected_y = [
+        63, 179, 46, 18, 103, 164, 20, 64,
+        237, 27, 175, 187, 35, 229, 224, 203,
+        11, 85, 184, 144, 213, 187, 119, 50,
+        254, 207, 56, 81, 239, 136, 69, 96
+    ];
+    
+    assert(x.to_bytes_32() == expected_x);
+    assert(y.to_bytes_32() == expected_y);
 }
