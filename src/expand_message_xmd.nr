@@ -76,7 +76,6 @@ fn HashBi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
     HashB(b_idx, res)
 }
 
-
 // Test methods
 // Maybe need to delete later
 fn print_bits(num: u8) {
@@ -95,7 +94,6 @@ fn rev_bits(num: u8) -> u8 {
     }
     res as u8
 }
-
 
 #[test]
 fn test_MsgPrime() {

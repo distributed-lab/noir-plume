@@ -347,52 +347,6 @@ impl BigUint {
     pub fn lt(self: Self, other: Self) -> bool {
         other.gt(self)
     }
-
-    // Too long, killed by OS
-    fn egcd(mut self: Self, mut b: BigUint) -> (Self, Self, Self) {
-        let mut x0 = BigUint::zero();
-        let mut x1 = BigUint::one();
-        let mut y0 = BigUint::one();
-        let mut y1 = BigUint::zero();
-
-        // 256 - max iterations
-        for _ in 0..256 {
-            print(_);
-            print(" ");
-
-            if !self.eq(BigUint::zero()) {
-                let (quo, rem) = b.div(self);
-                b = self;
-                self = rem;
-
-                let (new_x1, new_y1) = (x0.sub(quo.mul(x1)), y0.sub(quo.mul(y1)));
-                x0 = new_x1;
-                y0 = new_y1;
-            }
-        }
-        (b, x0, y0)
-    }
-
-    // Recurse  more than 1000 times
-    fn extended_gcd(self: Self, b: Self) -> (Self, Self, Self) {
-        print("0 ");
-        if b.eq(BigUint::zero()) {
-            (self, BigUint::one(), BigUint::zero())
-        } else {
-            let (gcd, x1, y1) = b.extended_gcd(self.div(b).1);
-            (gcd, y1, x1.sub(self.div(b).0.mul(y1)))
-        }
-    }
-
-    pub fn mod_mul_inv(self: Self, p: Self) -> Self {
-        let (g, x, _) = self.egcd(p);
-        if g.eq(BigUint::one()) {
-            x.div(p.add(p)).1
-        } else {
-            assert(false);
-            BigUint::zero()
-        }
-    }
 }
 
 
