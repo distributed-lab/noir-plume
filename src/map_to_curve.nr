@@ -4,7 +4,7 @@ use crate::constants::{
 };
 
 // For now I don't know the output format
-pub fn MapToCurve(u: [u8; 32]) -> Field {
+pub fn MapToCurve(u: [u8; 32]) -> (BigUint, BigUint) {
     // ? - don't know how to implement now
 
     // Step 1. tv1 = (Z * u^2) % p 
@@ -66,11 +66,8 @@ pub fn MapToCurve(u: [u8; 32]) -> Field {
 
     
     // IsoMap()
-    
 
-    
-
-    0
+    (BigUint::zero(), BigUint::zero())
 }
 
 pub fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (BigUint, BigUint) {

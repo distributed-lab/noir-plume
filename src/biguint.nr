@@ -296,6 +296,39 @@ impl BigUint {
             let mut lo = BigUint::zero();
             let mut hi = mid;
             let mut done = false;
+            
+            for _ in 0..self.msb() {
+                if !done {
+                    // shr1 replace .div(2) operation
+                    mid = lo.add(hi).shr1();
+                    let sq = mid.mul(mid);
+
+                    if (sq.lt(self)) {
+                        lo = mid.add(BigUint::one());
+                    } else {
+                        if (sq.gt(self)) {
+                            hi = mid.sub(BigUint::one());
+                        } else {
+                            done = true;
+                            lo = mid;
+                        }
+                    }
+                }
+            }
+            if hi.gt(lo) { lo } else { hi }
+        }
+    }
+    /*
+    pub fn sqrt(self: Self) -> Self {
+        assert(BigUint::from_bytes_32([0xff; 32]).gte(self));
+        let mut mid = self;
+
+        if self.eq(BigUint::zero()) | self.eq(BigUint::one()) {
+            mid
+        } else {
+            let mut lo = BigUint::zero();
+            let mut hi = mid;
+            let mut done = false;
 
             for _ in 0..256 {
                 if !done {
@@ -317,6 +350,7 @@ impl BigUint {
             mid
         }
     }
+    */
 
     pub fn eq(self: Self, other: Self) -> bool {
         self.blocks == other.blocks
