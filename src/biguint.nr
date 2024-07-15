@@ -318,39 +318,18 @@ impl BigUint {
             if hi.gt(lo) { lo } else { hi }
         }
     }
-    /*
-    pub fn sqrt(self: Self) -> Self {
-        assert(BigUint::from_bytes_32([0xff; 32]).gte(self));
-        let mut mid = self;
 
-        if self.eq(BigUint::zero()) | self.eq(BigUint::one()) {
-            mid
-        } else {
-            let mut lo = BigUint::zero();
-            let mut hi = mid;
-            let mut done = false;
+    // TODO: Test method
+    // No longer for BigUint, but for BigInt
+    pub fn negative(self: Self) -> Self {
+        let mut res = self;
+        let max: u32 = 0xffffffff;
 
-            for _ in 0..256 {
-                if !done {
-                    // shr1 replace .div(2) operation
-                    mid = lo.add(hi).shr1();
-                    let sq = mid.mul(mid);
-
-                    if sq.eq(self) | lo.gt(hi) {
-                        done = true;
-                    } else {
-                        if sq.lt(self) {
-                            lo = mid.add(BigUint::one());
-                        } else {
-                            hi = mid.sub(BigUint::one());
-                        }
-                    }
-                }
-            }
-            mid
+        for i in 0..NUM_BLOCKS {
+            res.blocks[i] = max - res.blocks[i];
         }
+        res.add(BigUint::one())
     }
-    */
 
     pub fn eq(self: Self, other: Self) -> bool {
         self.blocks == other.blocks
@@ -821,4 +800,23 @@ fn test_sqrt4() {
     let a = BigUint::from_bytes(&[1, 0, 0, 0, 1]);
     let expected_sqrt = BigUint::from_bytes(&[0, 0, 1]);
     assert(a.sqrt().eq(expected_sqrt));
+}
+
+#[test]
+fn test_negative1() {
+    let a = BigUint::from_bytes(&[1]);
+    let expected_neg = BigUint { blocks: [0xffffffff; NUM_BLOCKS ] };
+    assert(a.negative().eq(expected_neg));
+}
+
+#[test]
+fn test_negative2() {
+    let a = BigUint::from_bytes(&[0xff, 0xff, 120, 230]);
+    let mut expected = [0xff; NUM_BYTES];
+    expected[0] = 1;
+    expected[1] = 0;
+    expected[2] = 135;
+    expected[3] = 25;
+
+    assert(a.negative().to_bytes() == expected);
 }

@@ -19,13 +19,11 @@ pub fn MapToCurve(u: [u8; 32]) -> (BigUint, BigUint) {
     // Step 4. x1 = inv0(x1) - modular multiplicative inverse
     let x1 = tv1.add(tv2).div(p).1.mod_mul_inv(p);
 
-    // ? Step 5. e1 = x1 == 0
-    let e1 = x1.eq(BigUint::zero());
-
+    // Step 5. eq = x1 == 0
     // Step 6. x1 += 1
     // Step 7. x1 = CMOV(x1, c2, e1)
     // Maybe we don't need step with e1. This is not present in the TS code
-    let x1 = (if e1 { BigUint::from_bytes_32(C2) } else { x1 }).add(BigUint::one());
+    let x1 = (if x1.eq(BigUint::zero()) { BigUint::from_bytes_32(C2) } else { x1 }).add(BigUint::one());
     
     // Step 8. x1 = (x1 * c1) % p
     let x1 = x1.mul(BigUint::from_bytes_32(C1));
@@ -52,22 +50,17 @@ pub fn MapToCurve(u: [u8; 32]) -> (BigUint, BigUint) {
     let gx2 = gx1.mul(tv2).div(p).1;
 
     // Steps 16-18.
-    let (g, y2) = XY2Selector(x1, x2, gx1, gx2);
+    let (x, y2) = XY2Selector(x1, x2, gx1, gx2);
 
     // Step 19. y = sqrt(y2)
     let y = y2.sqrt();
     assert(y.mul(y).eq(y2));
 
-    // step 20. e3 = is_even(u) == is_even(y)
-    let e3 = big_u.is_even() == y.is_even();
-
+    // Step 20. e3 = is_even(u) == is_even(y)
     // step 21. y = e3 ? y : -y
-    // But in circom strange Negate() method, such as (p - y) % p
-
-    
-    // IsoMap()
-
-    (BigUint::zero(), BigUint::zero())
+    // Res y = (p - y) % p
+    let y = if big_u.is_even() == y.is_even() { y } else { y.negative() };
+    (x, p.sub(y).div(p).1)
 }
 
 pub fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (BigUint, BigUint) {
