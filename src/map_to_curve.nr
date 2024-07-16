@@ -1,20 +1,9 @@
 use dep::std::bigint::Secpk1Fq;
 use crate::biguint::BigUint;
 use crate::constants::SECP256K1_PRIME;
-
-
-// helper methods for convenient Secpk1Fq conversion
-fn to_u8_arr(smth: [u8; 32]) -> [u8] {
-    smth
-}
-
-fn to_u8_32(smth: [u8]) -> [u8; 32] {
-    let mut res = [0 as u8; 32];
-    for i in 0..smth.len() {
-        res[i] = smth[i];
-    }
-    res
-}
+use crate::utils::{
+    to_u8_arr, to_u8_32
+};
 
 fn get_z() -> [u8] {
     [
@@ -307,7 +296,7 @@ fn test_XY2Selector_2() {
 
     let actual = XY2Selector(x1, x2, gx1, gx2);
     assert(actual.0.eq(x2));
-    assert(actual.1.eq(gx2));
+    assert(actual.1.eq(BigUint::from_bytes(&[2])));
 }
 
 #[test]

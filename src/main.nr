@@ -1,5 +1,6 @@
 mod constants;
 mod biguint;
+mod utils;
 mod hash_to_curve;
 mod hash_to_field;
 mod expand_message_xmd;
@@ -9,12 +10,30 @@ mod iso_map;
 // For tests
 use crate::biguint::BigUint;
 use crate::map_to_curve::XY2Selector;
+use crate::iso_map::IsoMap;
 use dep::std::bigint::Secpk1Fq;
 
 pub fn main(msg: [u8; constants::MSG_LEN]) {
     //let _p = hash_to_curve::hash_to_curve(msg);
     // println(p.0);
     // println(p.1);
+
+    let x: [u8] = [
+        120, 31, 50, 101, 252, 100, 135, 184,
+        30, 73, 248, 5, 172, 141, 107, 4,
+        130, 39, 24, 108, 224, 81, 231, 221,
+        119, 78, 93, 209, 148, 151, 239, 233
+    ];
+    let y: [u8] = [
+        179, 23, 247, 231, 232, 159, 145, 18,
+        240, 65, 170, 20, 99, 215, 45, 86,
+        92, 69, 113, 200, 226, 110, 35, 191,
+        20, 83, 13, 103, 83, 206, 7, 203
+    ];
+
+    let (actual_x, actual_y) = IsoMap(x, y);
+    println(actual_x);
+    println(actual_y);
 
     /*
     let u0_bytes = [
