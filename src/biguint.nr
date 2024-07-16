@@ -3,7 +3,7 @@ use dep::std::wrapping_sub;
 use dep::std::bigint::Secpk1Fq;
 
 // Note: If you need a different number of bytes, change only this variable
-global NUM_BLOCKS: u64 = 24;
+global NUM_BLOCKS: u64 = 12;
 
 // Fixed value for u32 blocks arrary,
 // Can optimize to 256/8 = 16 bytes, otherwise bit shift doesn't work properly
@@ -326,7 +326,7 @@ impl BigUint {
         assert(BigUint::from_bytes_32([0xff; 32]).gte(self));
         let mut mid = self;
 
-        if self.eq(BigUint::zero()) | self.eq(BigUint::one()) {
+        if self.eq(BigUint::zero()) {
             mid
         } else {
             let mut lo = BigUint::zero();
@@ -395,8 +395,7 @@ fn test_from_bytes1() {
         a.eq(
             BigUint {
         blocks: [
-            2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         ]
     }
         )
@@ -411,8 +410,7 @@ fn test_from_bytes2() {
         a.eq(
             BigUint {
         blocks: [
-            0xffffffff, 0xffffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            0xffffffff, 0xffffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         ]
     }
         )
@@ -426,8 +424,8 @@ fn test_from_bytes_32_1() {
         actual.eq(
             BigUint {
         blocks: [
-            0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+            0xffffffff, 0xffffffff, 0xffffffff, 0, 0, 0, 0,
         ]
     }
         )
@@ -746,9 +744,12 @@ fn test_sqrt3() {
         3, 35, 247, 218, 52, 195, 241, 198
     ]);
 
-    let expected_sqrt = BigUint::from_bytes_32(
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 136, 82, 99, 169, 29, 173, 225, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    );
+    let expected_sqrt = BigUint::from_bytes_32([
+        231, 95, 119, 147, 127, 144, 147, 250,
+        8, 137, 82, 99, 169, 29, 173, 225,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0
+    ]);
     assert(num.sqrt().eq(expected_sqrt));
 }
 

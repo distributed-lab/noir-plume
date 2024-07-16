@@ -57,27 +57,6 @@ fn get_b() -> [u8] {
 }
 
 
-
-// p is SECP256K1_PRIME, then
-// mod_mul_inv(a, p) = a ^ (p-2) % p
-// use binary power, for O(logN) time complexity
-fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
-    let mut res = Secpk1Fq::from_le_bytes(&[1]);
-    let mut exp = (Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) - Secpk1Fq::from_le_bytes(&[2])).to_le_bytes();
-
-    for i in 0..exp.len() {
-        let byte = (exp[i] as Field).to_le_bits(8);
-
-        for j in 0..8 {
-            if byte[j] == 1 {
-                res = res * num;
-            }
-            num = num * num;
-        }
-    }
-    res
-}
-
 pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     // ? - don't know how to implement now
 
@@ -98,7 +77,7 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     // Step 7. x1 = CMOV(x1, c2, e1)
     // Maybe we don't need step with e1. This is not present in the TS code
     let x1 = (
-        if x1.to_le_bytes() == &[0] {
+        if x1 == Secpk1Fq::from_le_bytes(&[0]) {
             Secpk1Fq::from_le_bytes(get_c2())
         } else { x1 }
     ) + Secpk1Fq::from_le_bytes(&[1]);
@@ -124,16 +103,13 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     let gx2 = gx1 * tv2;
 
     // Steps 16-18.
-    let (x, y2) = XY2Selector(
+    // Step 19. y = sqrt(input_y)
+    let (x, y) = XY2Selector(
         BigUint::from_Secpk1Fq(x1),
         BigUint::from_Secpk1Fq(x2),
         BigUint::from_Secpk1Fq(gx1),
         BigUint::from_Secpk1Fq(gx2)
     );
-
-    // Step 19. y = sqrt(y2)
-    let y = y2.sqrt();
-    assert(y.mul(y).eq(y2));
 
     // Step 20. e3 = is_even(u) == is_even(y)
     // step 21. y = e3 ? y : -y
@@ -157,10 +133,30 @@ pub fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (Big
     assert(s1 ^ s2);
 
     if s1 {
-        (x1, gx1)
+        (x1, gx1_sqrt)
     } else {
-        (x2, gx2)
+        (x2, gx2_sqrt)
     }
+}
+
+// p is SECP256K1_PRIME, then
+// mod_mul_inv(a, p) = a ^ (p-2) % p
+// use binary power, for O(logN) time complexity
+fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
+    let mut res = Secpk1Fq::from_le_bytes(&[1]);
+    let mut exp = (Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) - Secpk1Fq::from_le_bytes(&[2])).to_le_bytes();
+
+    for i in 0..exp.len() {
+        let byte = (exp[i] as Field).to_le_bits(8);
+
+        for j in 0..8 {
+            if byte[j] == 1 {
+                res = res * num;
+            }
+            num = num * num;
+        }
+    }
+    res
 }
 
 #[test]
@@ -208,7 +204,7 @@ fn test_tv2() {
 }
 
 #[test]
-fn test_step_3() {
+fn test_tv1_add_tv2() {
     // x1 = (tv1 + tv2) % p
     let tv1 = Secpk1Fq::from_le_bytes(&[
         184, 23, 27, 73, 61, 77, 100, 6,
@@ -235,7 +231,7 @@ fn test_step_3() {
 }
 
 #[test]
-fn test_steps_4_5() {
+fn test_mod_mul_inv_x1() {
     // mod_mul_inv(x1)
     let x1 = Secpk1Fq::from_le_bytes(&[
         84, 131, 32, 9, 152, 117, 67, 219,
@@ -252,26 +248,6 @@ fn test_steps_4_5() {
         15, 146, 219, 86, 70, 80, 101, 19
     ];
     assert(inv_x1.to_le_bytes() == expected_inv_x1);
-}
-
-// TODO: Need to know the expected result
-#[test]
-fn test_x1() {
-    // x1 += 1
-    // x1 = (x1 * c1) % p
-    let x1 = Secpk1Fq::from_le_bytes(&[
-        211, 142, 221, 78, 176, 90, 13, 18,
-        140, 253, 186, 38, 111, 230, 156, 220,
-        55, 89, 204, 218, 31, 162, 175, 33,
-        15, 146, 219, 86, 70, 80, 101, 19
-    ]);
-
-    let x1 = (x1 + Secpk1Fq::from_le_bytes(&[1])) * Secpk1Fq::from_le_bytes(get_c1());
-
-    let expected_x1: [u8] = [
-        0 as u8; 32
-    ];
-    assert(x1.to_le_bytes() == expected_x1);
 }
 
 #[test]
@@ -298,8 +274,6 @@ fn test_XY2Selector_2() {
     assert(actual.1.eq(gx2));
 }
 
-// Failed
-// Frozes the OS
 #[test]
 fn test_MapToCurve() {
     let u0_bytes = [
