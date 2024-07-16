@@ -1,6 +1,16 @@
 // Expand Message Xmd
 use dep::std::sha256::sha256_var;
-use crate::constants::{MSG_LEN, PADDING_SIZE, DST_PRIME, NUM_PREIMAGE_BYTES};
+use crate::constants::{
+    MSG_LEN, PADDING_SIZE, NUM_PREIMAGE_BYTES
+};
+
+fn get_dst_prime() -> [u8] {
+    [
+        81, 85, 85, 88, 45, 86, 48, 49, 45, 67, 83, 48, 50, 45, 119, 105, 116,
+        104, 45, 115, 101, 99, 112, 50, 53, 54, 107, 49, 95, 88, 77, 68, 58,
+        83, 72, 65, 45, 50, 53, 54, 95, 83, 83, 87, 85, 95, 82, 79, 95, 49
+    ]
+}
 
 pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
     let msg_prime = MsgPrime(msg);
@@ -28,6 +38,7 @@ fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
     let z_pad = [0; 64];
     let lib_str = [0, 96];
     let mut msg_prime = [0 as u8; MSG_LEN + PADDING_SIZE];
+    let dst_prime = get_dst_prime();
 
     for i in 0..64 {
         msg_prime[i] = z_pad[i];
@@ -44,8 +55,8 @@ fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
     msg_prime[64 + MSG_LEN + 2] = 0;
 
     // msg_prme = z_pad || msg || lib_str || 0 || dst_prime
-    for i in 0..50 {
-        msg_prime[64 + MSG_LEN + 2 + 1 + i] = DST_PRIME[i];
+    for i in 0..dst_prime.len() {
+        msg_prime[64 + MSG_LEN + 2 + 1 + i] = dst_prime[i];
     }
 
     msg_prime
@@ -53,6 +64,7 @@ fn MsgPrime<N>(msg: [u8; N]) -> [u8; MSG_LEN + PADDING_SIZE] {
 
 fn HashB(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
     assert(b_idx < 8);
+    let dst_prime = get_dst_prime();
 
     let mut res = [0; NUM_PREIMAGE_BYTES];
     for i in 0..32 {
@@ -60,8 +72,8 @@ fn HashB(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
     }
     res[32] = b_idx;
 
-    for i in 0..50 {
-        res[32 + 1 + i] = DST_PRIME[i];
+    for i in 0..dst_prime.len() {
+        res[32 + 1 + i] = dst_prime[i];
     }
     sha256_var(res, NUM_PREIMAGE_BYTES)
 }

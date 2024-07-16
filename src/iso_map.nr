@@ -90,7 +90,7 @@ pub fn IsoMap(x: [u8; 32], y: [u8; 32], x_mapped: [u8; 32], y_mapped: [u8; 32]) 
     // x_mapped * x_den === x_num
     let res_x = x_num.div(x_den);
     assert(BigUint::from_bytes_32(x_mapped).mul(x_den).div(p).1.eq(x_num));
-    
+
     let left = BigUint::from_bytes_32(y_mapped).mul(y_den);
     let right = BigUint::from_bytes_32(y).mul(y_num);
     assert(left.eq(right));
@@ -131,7 +131,6 @@ fn YDen(x: BigUint, x_2: BigUint, x_3: BigUint) -> BigUint {
     let b = BigUint::from_bytes_32(get_k_4_1()).mul(x).div(p).1;
     BigUint::from_bytes_32(get_k_4_0()).add(x_3).add(a).add(b).div(p).1
 }
-
 
 #[test]
 fn test_IsoMap() {

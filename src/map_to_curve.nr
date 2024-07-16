@@ -1,67 +1,135 @@
-use crate::biguint::BigUint;
-use crate::constants::{
-    SECP256K1_PRIME, Z, C1, C2, A, B
-};
-
 use dep::std::bigint::Secpk1Fq;
+use crate::biguint::BigUint;
+use crate::constants::SECP256K1_PRIME;
 
-// For now I don't know the output format
+
+// helper methods for convenient Secpk1Fq conversion
+fn to_u8_arr(smth: [u8; 32]) -> [u8] {
+    smth
+}
+
+fn to_u8_32(smth: [u8]) -> [u8; 32] {
+    let mut res = [0 as u8; 32];
+    for i in 0..smth.len() {
+        res[i] = smth[i];
+    }
+    res
+}
+
+fn get_z() -> [u8] {
+    [
+        36, 252, 255, 255, 254, 255, 255, 255,
+        255, 255, 255, 255, 255, 255, 255, 255,
+        255, 255, 255, 255, 255, 255, 255, 255,
+        255, 255, 255, 255, 255, 255, 255, 255
+    ]
+}
+
+fn get_c1() -> [u8] {
+    [
+        195, 69, 35, 141, 142, 213, 1, 170,
+        253, 116, 45, 232, 152, 255, 244, 109,
+        12, 123, 232, 211, 245, 77, 12, 160,
+        178, 56, 133, 113, 238, 108, 197, 11
+    ]
+}
+
+fn get_c2() -> [u8] {
+    [
+        106, 208, 69, 23, 116, 209, 69, 23,
+        93, 116, 209, 69, 23, 93, 116, 209,
+        69, 23, 93, 116, 209, 69, 23, 93,
+        116, 209, 69, 23, 93, 116, 209, 69
+    ]
+}
+
+fn get_a() -> [u8] {
+    [
+        51, 69, 68, 26, 192, 71, 84, 64,
+        93, 14, 111, 203, 99, 211, 83, 233,
+        114, 210, 245, 240, 88, 85, 138, 160,
+        220, 26, 102, 221, 171, 49, 135, 63
+    ]
+}
+
+fn get_b() -> [u8] {
+    [253, 6]
+}
+
+
+
+// p is SECP256K1_PRIME, then
+// mod_mul_inv(a, p) = a ^ (p-2) % p
+// use binary power, for O(logN) time complexity
+fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
+    let mut res = Secpk1Fq::from_le_bytes(&[1]);
+    let mut exp = (Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) - Secpk1Fq::from_le_bytes(&[2])).to_le_bytes();
+
+    for i in 0..exp.len() {
+        let byte = (exp[i] as Field).to_le_bits(8);
+
+        for j in 0..8 {
+            if byte[j] == 1 {
+                res = res * num;
+            }
+            num = num * num;
+        }
+    }
+    res
+}
+
 pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     // ? - don't know how to implement now
 
-    // Step 1. tv1 = (Z * u^2) % p 
-    let big_u = BigUint::from_bytes_32(u);
-    let p = BigUint::from_bytes_32(SECP256K1_PRIME);
-    let tv1 = BigUint::from_bytes_32(Z).mul(big_u).mul(big_u).div(p).1;
+    // Step 1. tv1 = (Z * u^2) % p
+    let p = Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME));
+    let u = Secpk1Fq::from_le_bytes(to_u8_arr(u));
+    let tv1 = Secpk1Fq::from_le_bytes(get_z()) * u * u;
 
     // Step 2. tv2 = tv1^2 % p
-    let tv2 = tv1.mul(tv1).div(p).1;
+    let tv2 = tv1 * tv1;
     
     // Step 3. x1 = (tv1 + tv2) % p
     // Step 4. x1 = inv0(x1) - modular multiplicative inverse
-    let x1 = tv1.add(tv2).div(p).1; //.mod_mul_inv(p);
-
-    /*
-    let x1 = BigUint::from_bytes(&[
-        211, 142, 221, 78, 176, 90, 13, 18,
-        140, 253, 186, 38, 111, 230, 156, 220,
-        55, 89, 204, 218, 31, 162, 175, 33,
-        15, 146, 219, 86, 70, 80, 101, 19
-    ]);
-    */
+    let x1 = mod_mul_inv(tv1 + tv2);
 
     // Step 5. eq = x1 == 0
     // Step 6. x1 += 1
     // Step 7. x1 = CMOV(x1, c2, e1)
     // Maybe we don't need step with e1. This is not present in the TS code
-    let x1 = (if x1.eq(BigUint::zero()) { BigUint::from_bytes_32(C2) } else { x1 }).add(BigUint::one());
+    let x1 = (
+        if x1.to_le_bytes() == &[0] {
+            Secpk1Fq::from_le_bytes(get_c2())
+        } else { x1 }
+    ) + Secpk1Fq::from_le_bytes(&[1]);
     
     // Step 8. x1 = (x1 * c1) % p
-    let x1 = x1.mul(BigUint::from_bytes_32(C1));
+    let x1 = x1 * Secpk1Fq::from_le_bytes(get_c1());
 
-    // Step 9. gx1 = x1^2 % p
-    let gx1 = x1.mul(x1).div(p).1;
-
+    // Step 9.  gx1 = x1^2 % p
     // Step 10. gx1 = (gx1 + A) % p
-    let gx1 = gx1.add(BigUint::from_bytes_32(A)).div(p).1;
+    let gx1 = x1 * x1 + Secpk1Fq::from_le_bytes(get_a());
 
     // Step 11. gx1 = (gx1 * x1) % p
-    let gx1 = gx1.mul(x1).div(p).1;
-
     // Step 12. gx1 = (gx1 + B) % p
-    let gx1 = gx1.add(BigUint::from_bytes(B)).div(p).1;
+    let gx1 = gx1 * x1 + Secpk1Fq::from_le_bytes(get_b());
 
     // Step 13. x2 = (tv1 * x1) % p
-    let x2 = tv1.mul(x1).div(p).1;
+    let x2 = tv1 * x1;
 
     // Step 14. tv2 = (tv1 * tv2) % p
-    let tv2 = tv1.mul(tv2).div(p).1;
+    let tv2 = tv1 * tv2;
 
     // Step 15. gx2 = (gx1 * tv2) % p
-    let gx2 = gx1.mul(tv2).div(p).1;
+    let gx2 = gx1 * tv2;
 
     // Steps 16-18.
-    let (x, y2) = XY2Selector(x1, x2, gx1, gx2);
+    let (x, y2) = XY2Selector(
+        BigUint::from_Secpk1Fq(x1),
+        BigUint::from_Secpk1Fq(x2),
+        BigUint::from_Secpk1Fq(gx1),
+        BigUint::from_Secpk1Fq(gx2)
+    );
 
     // Step 19. y = sqrt(y2)
     let y = y2.sqrt();
@@ -70,8 +138,14 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     // Step 20. e3 = is_even(u) == is_even(y)
     // step 21. y = e3 ? y : -y
     // Res y = (p - y) % p
-    let y = if big_u.is_even() == y.is_even() { y } else { y.negative() };
-    (x.to_bytes_32(), p.sub(y).div(p).1.to_bytes_32())
+    let y = if BigUint::from_Secpk1Fq(u).is_even() == y.is_even() {
+        BigUint::to_Secpk1Fq(y)
+    } else {
+        // -y don't work
+        let temp = BigUint::to_Secpk1Fq(y);
+        temp - temp - temp
+    };
+    (x.to_bytes_32(), to_u8_32((p - y).to_le_bytes()))
 }
 
 pub fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (BigUint, BigUint) {
@@ -99,52 +173,50 @@ fn test_tv1() {
         247, 161, 121, 54, 93, 171, 138, 18
     ];
 
-    //let big_u0::from
+    let big_u0 = Secpk1Fq::from_le_bytes(to_u8_arr(u));
+    let big_z = Secpk1Fq::from_le_bytes(get_z());
 
-    let big_u0 = BigUint::from_bytes_32(u);
-    let big_z = BigUint::from_bytes_32(Z);
-    let big_P = BigUint::from_bytes_32(SECP256K1_PRIME);
-    let tv1 = big_z.mul(big_u0).mul(big_u0).div(big_P).1;
+    let tv1 = big_z * big_u0 * big_u0;
     
-    let expected_tv1 = [
+    let expected_tv1: [u8] = [
         184, 23, 27, 73, 61, 77, 100, 6,
         75, 213, 150, 133, 73, 150, 175, 173,
         67, 248, 62, 55, 61, 21, 80, 247,
         40, 1, 228, 234, 119, 216, 29, 46
     ];
-    assert(tv1.to_bytes_32() == expected_tv1);
+    assert(tv1.to_le_bytes() == expected_tv1);
 }
 
 #[test]
 fn test_tv2() {
     // tv2 = tv1^2 % p
-    let tv1 = BigUint::from_bytes_32([
+    let tv1 = Secpk1Fq::from_le_bytes(&[
         184, 23, 27, 73, 61, 77, 100, 6,
         75, 213, 150, 133, 73, 150, 175, 173,
         67, 248, 62, 55, 61, 21, 80, 247,
         40, 1, 228, 234, 119, 216, 29, 46
     ]);
-    let tv2 = tv1.mul(tv1).div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
+    let tv2 = tv1 * tv1;
 
-    let expected_tv2 = [
+    let expected_tv2: [u8] = [
         156, 107, 5, 192, 90, 40, 223, 212,
         130, 84, 167, 237, 236, 226, 136, 183,
         80, 34, 225, 160, 109, 225, 215, 3,
         219, 33, 19, 240, 188, 234, 211, 152
     ];
-    assert(tv2.to_bytes_32() == expected_tv2);
+    assert(tv2.to_le_bytes() == expected_tv2);
 }
 
 #[test]
 fn test_step_3() {
     // x1 = (tv1 + tv2) % p
-    let tv1 = BigUint::from_bytes_32([
+    let tv1 = Secpk1Fq::from_le_bytes(&[
         184, 23, 27, 73, 61, 77, 100, 6,
         75, 213, 150, 133, 73, 150, 175, 173,
         67, 248, 62, 55, 61, 21, 80, 247,
         40, 1, 228, 234, 119, 216, 29, 46
     ]);
-    let tv2 = BigUint::from_bytes_32([
+    let tv2 = Secpk1Fq::from_le_bytes(&[
         156, 107, 5, 192, 90, 40, 223, 212,
         130, 84, 167, 237, 236, 226, 136, 183,
         80, 34, 225, 160, 109, 225, 215, 3,
@@ -152,59 +224,54 @@ fn test_step_3() {
     ]);
 
 
-    let x1 = tv1.add(tv2).div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
-    let expected_x1 = [
+    let x1 = tv1 + tv2;
+    let expected_x1: [u8] = [
         84, 131, 32, 9, 152, 117, 67, 219,
         205, 41, 62, 115, 54, 121, 56, 101,
         148, 26, 32, 216, 170, 246, 39, 251,
         3, 35, 247, 218, 52, 195, 241, 198
     ];
-    assert(x1.to_bytes_32() == expected_x1);
+    assert(x1.to_le_bytes() == expected_x1);
 }
 
-/*
-// Failed
-// Frozes the OS. Too hard for compiler
 #[test]
 fn test_steps_4_5() {
     // mod_mul_inv(x1)
-    let x1 = BigUint::from_bytes_32([
+    let x1 = Secpk1Fq::from_le_bytes(&[
         84, 131, 32, 9, 152, 117, 67, 219,
         205, 41, 62, 115, 54, 121, 56, 101,
         148, 26, 32, 216, 170, 246, 39, 251,
         3, 35, 247, 218, 52, 195, 241, 198
     ]);
 
-    let inv_x1 = x1.mod_mul_inv(BigUint::from_bytes_32(SECP256K1_PRIME));
-    let expected_inv_x1 = [
+    let inv_x1 = mod_mul_inv(x1);
+    let expected_inv_x1: [u8] = [
         211, 142, 221, 78, 176, 90, 13, 18,
         140, 253, 186, 38, 111, 230, 156, 220,
         55, 89, 204, 218, 31, 162, 175, 33,
         15, 146, 219, 86, 70, 80, 101, 19
     ];
-    assert(inv_x1.to_bytes_32() == expected_inv_x1);
+    assert(inv_x1.to_le_bytes() == expected_inv_x1);
 }
-*/
 
 // TODO: Need to know the expected result
 #[test]
 fn test_x1() {
     // x1 += 1
     // x1 = (x1 * c1) % p
-    let x1 = BigUint::from_bytes_32([
+    let x1 = Secpk1Fq::from_le_bytes(&[
         211, 142, 221, 78, 176, 90, 13, 18,
         140, 253, 186, 38, 111, 230, 156, 220,
         55, 89, 204, 218, 31, 162, 175, 33,
         15, 146, 219, 86, 70, 80, 101, 19
     ]);
 
-    let x1 = x1.add(BigUint::one());
-    let x1 = x1.mul(BigUint::from_bytes_32(C1)).div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
+    let x1 = (x1 + Secpk1Fq::from_le_bytes(&[1])) * Secpk1Fq::from_le_bytes(get_c1());
 
-    let expected_x1 = [
+    let expected_x1: [u8] = [
         0 as u8; 32
     ];
-    assert(x1.to_bytes_32() == expected_x1);
+    assert(x1.to_le_bytes() == expected_x1);
 }
 
 #[test]

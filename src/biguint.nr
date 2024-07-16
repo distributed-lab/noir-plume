@@ -1,5 +1,6 @@
 // Based on the code https://github.com/shuklaayush/noir-bigint
 use dep::std::wrapping_sub;
+use dep::std::bigint::Secpk1Fq;
 
 // Note: If you need a different number of bytes, change only this variable
 global NUM_BLOCKS: u64 = 24;
@@ -69,6 +70,10 @@ impl BigUint {
         }
         res
     }
+
+    pub fn from_Secpk1Fq(num: Secpk1Fq) -> Self {
+        BigUint::from_bytes_32(BigUint::from_u8_arr_to_u8_32(num.to_le_bytes()))
+    }
     
     pub fn to_bytes(self: Self) -> [u8; NUM_BYTES] {
         let mut res = [0 as u8; NUM_BYTES];
@@ -82,6 +87,37 @@ impl BigUint {
             }
         }
         res
+    }
+
+    // TODO: Need to test
+    pub fn to_bits(self: Self) -> [u1; NUM_BYTES*8] {
+        let mut res = [0 as u1; NUM_BYTES*8];
+
+        for i in 0..NUM_BLOCKS {
+            let block_bits = (self.blocks[i] as Field).to_le_bits(BITS_PER_BLOCK as u32);
+
+            for j in 0..BITS_PER_BLOCK {
+                let idx = (i as Field) * (BITS_PER_BLOCK as Field) + (j as Field);
+                res[idx] = block_bits[j];
+            }
+        }
+        res
+    }
+
+    // Private, helper method
+    fn from_u8_32_to_u8_arr(arr: [u8; 32]) -> [u8] {
+        arr
+    }
+    fn from_u8_arr_to_u8_32(arr: [u8]) -> [u8; 32] {
+        let mut res = [0 as u8; 32];
+        for i in 0..arr.len() {
+            res[i] = arr[i];
+        }
+        res
+    }
+
+    pub fn to_Secpk1Fq(self: Self) -> Secpk1Fq {
+        Secpk1Fq::from_le_bytes(BigUint::from_u8_32_to_u8_arr(self.to_bytes_32()))
     }
 
     pub fn to_bytes_32(self: Self) -> [u8; 32] {
@@ -279,7 +315,7 @@ impl BigUint {
         }
     }
 
-    /* TODO: Implement
+    /*
     Use simple binary search algorithm
     The code is specialized, so here used 32*8 iterations.
     For more general code, you should replace
@@ -297,7 +333,8 @@ impl BigUint {
             let mut hi = mid;
             let mut done = false;
             
-            for _ in 0..self.msb() {
+            // Max number of bits - 32*8 = 256
+            for _ in 0..256 {
                 if !done {
                     // shr1 replace .div(2) operation
                     mid = lo.add(hi).shr1();
@@ -489,23 +526,6 @@ fn test_mul1() {
     assert(res.eq(BigUint::from_bytes(&[0x70])));
 }
 
-// TODO: need to rework
-/*
-#[test]
-fn test_mul2() {
-    let mut bytes = [0xff as u8; NUM_BYTES];
-    bytes[NUM_BYTES-1] = 15;
-
-    let a = BigUint { bytes };
-    let b = BigUint::from_bytes(&[16]);
-    let res = a.mul(b);
-
-    let mut expected_bytes = [0xff; NUM_BYTES];
-    expected_bytes[0] = 240;
-    assert(res.to_bytes() == expected_bytes);
-}
-*/
-
 #[test]
 fn test_extend_mul1() {
     let a = BigUint::from_bytes(&[2]);
@@ -515,23 +535,6 @@ fn test_extend_mul1() {
     assert(lo.eq(BigUint::from_bytes(&[6])));
     assert(hi.eq(BigUint::zero()));
 }
-
-// TODO: Need to rework
-/*
-#[test]
-fn test_extend_mul2() {
-    let a = BigUint { bytes: [0xff; NUM_BYTES] };
-    let b = a;
-    let (lo, hi) = a.extend_mul(b);
-
-    let mut hi_expect = [0xff; NUM_BYTES];
-    hi_expect[0] = 0xfe;
-    let hi_expect = BigUint { bytes: hi_expect };
-
-    assert(lo.eq(BigUint::one()));
-    assert(hi.eq(hi_expect));
-}
-*/
 
 #[test]
 fn test_cmp1() {
@@ -759,7 +762,7 @@ fn test_sqrt4() {
 #[test]
 fn test_negative1() {
     let a = BigUint::from_bytes(&[1]);
-    let expected_neg = BigUint { blocks: [0xffffffff; NUM_BLOCKS ] };
+    let expected_neg = BigUint { blocks: [0xffffffff; NUM_BLOCKS] };
     assert(a.negative().eq(expected_neg));
 }
 
