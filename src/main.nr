@@ -8,6 +8,7 @@ mod iso_map;
 
 // For tests
 use crate::biguint::BigUint;
+use crate::map_to_curve::XY2Selector;
 use dep::std::bigint::Secpk1Fq;
 
 pub fn main(msg: [u8; constants::MSG_LEN]) {
@@ -15,6 +16,7 @@ pub fn main(msg: [u8; constants::MSG_LEN]) {
     // println(p.0);
     // println(p.1);
 
+    /*
     let u0_bytes = [
         97, 43, 138, 176, 151, 243, 115, 72,
         138, 225, 103, 71, 84, 31, 73, 62,
@@ -36,6 +38,8 @@ pub fn main(msg: [u8; constants::MSG_LEN]) {
         254, 207, 56, 81, 239, 136, 69, 96
     ];
 
+    println("\nres");
     println(x);
     println(y);
+    */
 }

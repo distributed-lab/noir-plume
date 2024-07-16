@@ -53,10 +53,39 @@ fn get_a() -> [u8] {
 }
 
 fn get_b() -> [u8] {
-    [253, 6]
+    [235, 6]
 }
 
+pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
+    let u = Secpk1Fq::from_le_bytes(to_u8_arr(u));
+    let z = Secpk1Fq::from_le_bytes(get_z());
+    
+    let tv1 = mod_mul_inv(z*z * u*u*u*u + z * u*u);
+    let a = Secpk1Fq::from_le_bytes(get_a());
+    let b = Secpk1Fq::from_le_bytes(get_b());
+    let x1 = ((b - b - b) / a) * (Secpk1Fq::from_le_bytes(&[1]) + tv1);
 
+    let gx1 = x1*x1*x1 + a*x1 + b;
+    let x2 = z * u*u * x1;
+    let gx2 = x2*x2*x2 + a*x2 + b;
+    let (x, y) = XY2Selector(
+        BigUint::from_Secpk1Fq(x1),
+        BigUint::from_Secpk1Fq(x2),
+        BigUint::from_Secpk1Fq(gx1),
+        BigUint::from_Secpk1Fq(gx2)
+    );
+
+    let y = if BigUint::from_Secpk1Fq(u).is_even() == y.is_even() {
+        BigUint::to_Secpk1Fq(y)
+    } else {
+        // -y don't work
+        let temp = BigUint::to_Secpk1Fq(y);
+        temp - temp - temp
+    };
+    (x.to_bytes_32(), to_u8_32(y.to_le_bytes()))
+}
+
+/*
 pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     // ? - don't know how to implement now
 
@@ -123,8 +152,9 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     };
     (x.to_bytes_32(), to_u8_32((p - y).to_le_bytes()))
 }
+*/
 
-pub fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (BigUint, BigUint) {
+fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (BigUint, BigUint) {
     let gx1_sqrt = gx1.sqrt();
     let gx2_sqrt = gx2.sqrt();
 
@@ -252,22 +282,28 @@ fn test_mod_mul_inv_x1() {
 
 #[test]
 fn test_XY2Selector_1() {
-    let gx1 = BigUint::from_bytes(&[4]);
-    let gx2 = BigUint::from_bytes(&[5]);
-    let x1 = BigUint::from_bytes(&[123]);
-    let x2 = BigUint::from_bytes(&[200, 1]);
+    let x1 = Secpk1Fq::from_le_bytes(&[123]);
+    let x2 = Secpk1Fq::from_le_bytes(&[200, 1]);
+    let gx1 = Secpk1Fq::from_le_bytes(&[4]);
+    let gx2 = Secpk1Fq::from_le_bytes(&[5]); 
 
-    let (expected_x1, expected_gx1) = XY2Selector(x1, x2, gx1, gx2);
-    assert(expected_x1.eq(x1));
-    assert(expected_gx1.eq(gx1));
+    let (actual_x1, actual_gx1) = XY2Selector(
+        BigUint::from_Secpk1Fq(x1),
+        BigUint::from_Secpk1Fq(x2),
+        BigUint::from_Secpk1Fq(gx1),
+        BigUint::from_Secpk1Fq(gx2)
+    );
+
+    assert(BigUint::to_Secpk1Fq(actual_x1) == x1);
+    assert(BigUint::to_Secpk1Fq(actual_gx1) == Secpk1Fq::from_le_bytes(&[2]));
 }
 
 #[test]
 fn test_XY2Selector_2() {
-    let gx1 = BigUint::from_bytes(&[5]);
-    let gx2 = BigUint::from_bytes(&[4]);
     let x1 = BigUint::from_bytes(&[123]);
     let x2 = BigUint::from_bytes(&[200, 1]);
+    let gx1 = BigUint::from_bytes(&[5]);
+    let gx2 = BigUint::from_bytes(&[4]);
 
     let actual = XY2Selector(x1, x2, gx1, gx2);
     assert(actual.0.eq(x2));

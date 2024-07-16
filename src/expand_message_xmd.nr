@@ -1,8 +1,6 @@
 // Expand Message Xmd
 use dep::std::sha256::sha256_var;
-use crate::constants::{
-    MSG_LEN, PADDING_SIZE, NUM_PREIMAGE_BYTES
-};
+use crate::constants::{MSG_LEN, PADDING_SIZE, NUM_PREIMAGE_BYTES};
 
 fn get_dst_prime() -> [u8] {
     [
