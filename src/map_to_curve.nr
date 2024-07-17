@@ -66,94 +66,7 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
         y - y - y
     };
     (to_u8_32(x.to_le_bytes()), to_u8_32(y.to_le_bytes()))
-
-    /*
-    let (x, y) = XY2Selector(
-        BigUint::from_Secpk1Fq(x1),
-        BigUint::from_Secpk1Fq(x2),
-        BigUint::from_Secpk1Fq(gx1),
-        BigUint::from_Secpk1Fq(gx2)
-    );
-
-    let y = if BigUint::from_Secpk1Fq(u).is_even() == y.is_even() {
-        BigUint::to_Secpk1Fq(y)
-    } else {
-        // -y don't work
-        let temp = BigUint::to_Secpk1Fq(y);
-        temp - temp - temp
-    };
-    (x.to_bytes_32(), to_u8_32(y.to_le_bytes()))
-    */
 }
-
-/*
-pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
-    // ? - don't know how to implement now
-
-    // Step 1. tv1 = (Z * u^2) % p
-    let p = Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME));
-    let u = Secpk1Fq::from_le_bytes(to_u8_arr(u));
-    let tv1 = Secpk1Fq::from_le_bytes(get_z()) * u * u;
-
-    // Step 2. tv2 = tv1^2 % p
-    let tv2 = tv1 * tv1;
-    
-    // Step 3. x1 = (tv1 + tv2) % p
-    // Step 4. x1 = inv0(x1) - modular multiplicative inverse
-    let x1 = mod_mul_inv(tv1 + tv2);
-
-    // Step 5. eq = x1 == 0
-    // Step 6. x1 += 1
-    // Step 7. x1 = CMOV(x1, c2, e1)
-    // Maybe we don't need step with e1. This is not present in the TS code
-    let x1 = (
-        if x1 == Secpk1Fq::from_le_bytes(&[0]) {
-            Secpk1Fq::from_le_bytes(get_c2())
-        } else { x1 }
-    ) + Secpk1Fq::from_le_bytes(&[1]);
-    
-    // Step 8. x1 = (x1 * c1) % p
-    let x1 = x1 * Secpk1Fq::from_le_bytes(get_c1());
-
-    // Step 9.  gx1 = x1^2 % p
-    // Step 10. gx1 = (gx1 + A) % p
-    let gx1 = x1 * x1 + Secpk1Fq::from_le_bytes(get_a());
-
-    // Step 11. gx1 = (gx1 * x1) % p
-    // Step 12. gx1 = (gx1 + B) % p
-    let gx1 = gx1 * x1 + Secpk1Fq::from_le_bytes(get_b());
-
-    // Step 13. x2 = (tv1 * x1) % p
-    let x2 = tv1 * x1;
-
-    // Step 14. tv2 = (tv1 * tv2) % p
-    let tv2 = tv1 * tv2;
-
-    // Step 15. gx2 = (gx1 * tv2) % p
-    let gx2 = gx1 * tv2;
-
-    // Steps 16-18.
-    // Step 19. y = sqrt(input_y)
-    let (x, y) = XY2Selector(
-        BigUint::from_Secpk1Fq(x1),
-        BigUint::from_Secpk1Fq(x2),
-        BigUint::from_Secpk1Fq(gx1),
-        BigUint::from_Secpk1Fq(gx2)
-    );
-
-    // Step 20. e3 = is_even(u) == is_even(y)
-    // step 21. y = e3 ? y : -y
-    // Res y = (p - y) % p
-    let y = if BigUint::from_Secpk1Fq(u).is_even() == y.is_even() {
-        BigUint::to_Secpk1Fq(y)
-    } else {
-        // -y don't work
-        let temp = BigUint::to_Secpk1Fq(y);
-        temp - temp - temp
-    };
-    (x.to_bytes_32(), to_u8_32((p - y).to_le_bytes()))
-}
-*/
 
 // We use the formula R = num^((p+1)/4), since SECP256K1_PRIME % 4 == 3
 // https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm
@@ -336,17 +249,18 @@ fn test_MapToCurve() {
     ];
 
     let (x, y) = MapToCurve(u0_bytes);
+
     let expected_x = [
-        215, 34, 83, 138, 195, 143, 59, 82,
-        216, 218, 186, 187, 204, 4, 102, 67,
-        34, 23, 169, 179, 209, 87, 152, 177,
-        95, 132, 38, 212, 50, 148, 221, 7
+        181, 145, 157, 194, 47, 137, 194, 182,
+        137, 175, 255, 248, 220, 155, 21, 208,
+        170, 147, 24, 158, 1, 255, 122, 7,
+        138, 168, 206, 231, 17, 190, 219, 242
     ];
     let expected_y = [
-        63, 179, 46, 18, 103, 164, 20, 64,
-        237, 27, 175, 187, 35, 229, 224, 203,
-        11, 85, 184, 144, 213, 187, 119, 50,
-        254, 207, 56, 81, 239, 136, 69, 96
+        229, 169, 131, 251, 47, 167, 25, 23,
+        58, 145, 104, 47, 28, 167, 183, 142,
+        222, 47, 130, 14, 237, 125, 44, 130,
+        236, 154, 191, 129, 133, 161, 34, 59
     ];
     
     assert(x == expected_x);

@@ -4,9 +4,9 @@ use crate::utils::{
     to_u8_arr, to_u8_32
 };
 
-pub fn IsoMap(x: [u8], y: [u8]) -> ([u8; 32], [u8; 32]) {
-    let x = Secpk1Fq::from_le_bytes(x);
-    let y = Secpk1Fq::from_le_bytes(y);
+pub fn IsoMap(x: [u8; 32], y: [u8; 32]) -> ([u8; 32], [u8; 32]) {
+    let x = Secpk1Fq::from_le_bytes(to_u8_arr(x));
+    let y = Secpk1Fq::from_le_bytes(to_u8_arr(y));
 
     // Step 1. Calculate x^2
     // Step 2. Calculate x^3
@@ -75,15 +75,16 @@ fn YDen(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
     k4_0 + k4_1*x + k4_2*x_2 + x_3
 }
 
+
 #[test]
 fn test_IsoMap() {
-    let x: [u8] = [
+    let x = [
         234, 37, 9, 54, 187, 229, 107, 235,
         237, 49, 196, 35, 95, 174, 247, 160,
         85, 100, 3, 87, 65, 16, 136, 148,
         106, 65, 146, 45, 83, 206, 236, 141
     ];
-    let y: [u8] = [
+    let y = [
         74, 218, 165, 198, 134, 228, 97, 243,
         190, 229, 69, 77, 46, 210, 19, 124,
         166, 44, 107, 238, 93, 62, 19, 74,

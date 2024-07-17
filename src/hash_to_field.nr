@@ -21,8 +21,7 @@ pub fn hash_to_field<N>(msg: [u8; N]) -> [[u8; 32]; 2] {
 
 fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
     // Need to convert in Big Endian format
-    let a = BigUint::from_bytes(
-        &[
+    let a = BigUint::from_bytes(&[
         ui[47], ui[46], ui[45], ui[44], ui[43], ui[42], ui[41], ui[40],
         ui[39], ui[38], ui[37], ui[36], ui[35], ui[34], ui[33], ui[32],
         ui[31], ui[30], ui[29], ui[28], ui[27], ui[26], ui[25], ui[24],

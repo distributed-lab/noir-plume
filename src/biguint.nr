@@ -302,14 +302,16 @@ impl BigUint {
             let bit_diff = self.msb() - other.msb();
             let mut c = other.shl(bit_diff);
 
-            for _ in 0..bit_diff+1 {
-                if rem.lt(c) {
-                    quo = quo.shl1();
-                } else {
-                    rem = rem.sub(c);
-                    quo = quo.shl1().add(BigUint::one());
+            for i in 0..NUM_BYTES*8+1 {
+                if i <= bit_diff {
+                    if rem.lt(c) {
+                        quo = quo.shl1();
+                    } else {
+                        rem = rem.sub(c);
+                        quo = quo.shl1().add(BigUint::one());
+                    }
+                    c = c.shr1();
                 }
-                c = c.shr1();
             }
             (quo, rem)
         }
