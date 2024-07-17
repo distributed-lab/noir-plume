@@ -45,6 +45,7 @@ fn get_b() -> [u8] {
     [235, 6]
 }
 
+// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#simple-swu
 pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     let u = Secpk1Fq::from_le_bytes(to_u8_arr(u));
     let z = Secpk1Fq::from_le_bytes(get_z());
@@ -57,6 +58,16 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     let gx1 = x1*x1*x1 + a*x1 + b;
     let x2 = z * u*u * x1;
     let gx2 = x2*x2*x2 + a*x2 + b;
+    let (x, y) = XY2Selector(x1, x2, gx1, gx2);
+
+    let y = if BigUint::from_Secpk1Fq(u).is_even() == BigUint::from_Secpk1Fq(y).is_even() {
+        y
+    } else {
+        y - y - y
+    };
+    (to_u8_32(x.to_le_bytes()), to_u8_32(y.to_le_bytes()))
+
+    /*
     let (x, y) = XY2Selector(
         BigUint::from_Secpk1Fq(x1),
         BigUint::from_Secpk1Fq(x2),
@@ -72,6 +83,7 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
         temp - temp - temp
     };
     (x.to_bytes_32(), to_u8_32(y.to_le_bytes()))
+    */
 }
 
 /*
@@ -143,13 +155,28 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
 }
 */
 
-fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (BigUint, BigUint) {
-    let gx1_sqrt = gx1.sqrt();
-    let gx2_sqrt = gx2.sqrt();
+// We use the formula R = num^((p+1)/4), since SECP256K1_PRIME % 4 == 3
+// https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm
+fn mod_sqrt(num: Secpk1Fq) -> Secpk1Fq {
+    let p_plus_one = Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) + Secpk1Fq::from_le_bytes(&[1]);
+    bin_pow(num, p_plus_one / Secpk1Fq::from_le_bytes(&[4]))
+}
 
-    let s1 = gx1_sqrt.mul(gx1_sqrt).eq(gx1);
-    let s2 = gx2_sqrt.mul(gx2_sqrt).eq(gx2);
+fn XY2Selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
+    let gx1_sqrt = mod_sqrt(gx1);
+    let gx2_sqrt = mod_sqrt(gx2);
+
+    let s1 = gx1_sqrt * gx1_sqrt == gx1;
+    let s2 = gx2_sqrt * gx2_sqrt == gx2;
     assert(s1 ^ s2);
+
+    /*
+    println(gx1);
+    println(gx2);
+    println("\nsqrt*sqrt");
+    println(gx1_sqrt * gx1_sqrt);
+    println(gx2_sqrt * gx2_sqrt);
+    */
 
     if s1 {
         (x1, gx1_sqrt)
@@ -162,8 +189,12 @@ fn XY2Selector(x1: BigUint, x2: BigUint, gx1: BigUint, gx2: BigUint) -> (BigUint
 // mod_mul_inv(a, p) = a ^ (p-2) % p
 // use binary power, for O(logN) time complexity
 fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
+    bin_pow(num, Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) - Secpk1Fq::from_le_bytes(&[2]))
+}
+
+fn bin_pow(mut num: Secpk1Fq, pow: Secpk1Fq) -> Secpk1Fq {
     let mut res = Secpk1Fq::from_le_bytes(&[1]);
-    let mut exp = (Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) - Secpk1Fq::from_le_bytes(&[2])).to_le_bytes();
+    let mut exp = pow.to_le_bytes();
 
     for i in 0..exp.len() {
         let byte = (exp[i] as Field).to_le_bits(8);
@@ -177,6 +208,7 @@ fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
     }
     res
 }
+
 
 #[test]
 fn test_tv1() {
@@ -269,34 +301,29 @@ fn test_mod_mul_inv_x1() {
     assert(inv_x1.to_le_bytes() == expected_inv_x1);
 }
 
+// More XY2Selector test, for understand mod_sqrt
 #[test]
 fn test_XY2Selector_1() {
     let x1 = Secpk1Fq::from_le_bytes(&[123]);
     let x2 = Secpk1Fq::from_le_bytes(&[200, 1]);
     let gx1 = Secpk1Fq::from_le_bytes(&[4]);
-    let gx2 = Secpk1Fq::from_le_bytes(&[5]); 
+    let gx2 = Secpk1Fq::from_le_bytes(&[5]);
 
-    let (actual_x1, actual_gx1) = XY2Selector(
-        BigUint::from_Secpk1Fq(x1),
-        BigUint::from_Secpk1Fq(x2),
-        BigUint::from_Secpk1Fq(gx1),
-        BigUint::from_Secpk1Fq(gx2)
-    );
-
-    assert(BigUint::to_Secpk1Fq(actual_x1) == x1);
-    assert(BigUint::to_Secpk1Fq(actual_gx1) == Secpk1Fq::from_le_bytes(&[2]));
+    let (actual_x, actual_gx) = XY2Selector(x1, x2, gx1, gx2);
+    assert(actual_x == x1);
+    assert(actual_gx == Secpk1Fq::from_le_bytes(&[2]));
 }
 
 #[test]
 fn test_XY2Selector_2() {
-    let x1 = BigUint::from_bytes(&[123]);
-    let x2 = BigUint::from_bytes(&[200, 1]);
-    let gx1 = BigUint::from_bytes(&[5]);
-    let gx2 = BigUint::from_bytes(&[4]);
+    let x1 = Secpk1Fq::from_le_bytes(&[123]);
+    let x2 = Secpk1Fq::from_le_bytes(&[200, 1]);
+    let gx1 = Secpk1Fq::from_le_bytes(&[5]);
+    let gx2 = Secpk1Fq::from_le_bytes(&[4]);
 
-    let actual = XY2Selector(x1, x2, gx1, gx2);
-    assert(actual.0.eq(x2));
-    assert(actual.1.eq(BigUint::from_bytes(&[2])));
+    let (actual_x, actual_gx) = XY2Selector(x1, x2, gx1, gx2);
+    assert(actual_x == x2);
+    assert(actual_gx == Secpk1Fq::from_le_bytes(&[2]));
 }
 
 #[test]
