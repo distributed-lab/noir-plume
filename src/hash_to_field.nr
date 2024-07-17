@@ -33,21 +33,6 @@ fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
 
     let rem = a.div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
     rem.to_bytes_32()
-
-    // for [[u64; 4]; 2] output.
-    // I think it's better to save in byte format
-    
-    /*
-    // Convertion from [u8; 8] to u64, Little Endian
-    
-    let mut res = [0 as u64; 4];
-    for i in 0..4 {
-        for j in 0..8 {
-            res[i] += (256 as Field).pow_32(j as Field) as u64 * rem[i*8 + j] as u64;
-        }
-    }
-    res
-    */
 }
 
 

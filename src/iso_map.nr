@@ -1,8 +1,6 @@
 use dep::std::bigint::Secpk1Fq;
 use crate::constants::SECP256K1_PRIME;
-use crate::utils::{
-    to_u8_arr, to_u8_32
-};
+use crate::utils::{to_u8_arr, to_u8_32};
 
 pub fn IsoMap(x: [u8; 32], y: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     let x = Secpk1Fq::from_le_bytes(to_u8_arr(x));
@@ -11,7 +9,7 @@ pub fn IsoMap(x: [u8; 32], y: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     // Step 1. Calculate x^2
     // Step 2. Calculate x^3
     let x_2 = x * x;
-    let x_3 = x_2 * x; 
+    let x_3 = x_2 * x;
 
     let x_num = XNum(x, x_2, x_3);
     let x_den = XDen(x, x_2);
@@ -34,7 +32,7 @@ fn XNum(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
     let k1_1 = Secpk1Fq::from_le_bytes(get_k_1_1());
     let k1_2 = Secpk1Fq::from_le_bytes(get_k_1_2());
     let k1_3 = Secpk1Fq::from_le_bytes(get_k_1_3());
-    k1_0 + k1_1*x + k1_2*x_2 + k1_3*x_3
+    k1_0 + k1_1 * x + k1_2 * x_2 + k1_3 * x_3
 }
 
 /*
@@ -45,7 +43,7 @@ k_(2,0)
 fn XDen(x: Secpk1Fq, x_2: Secpk1Fq) -> Secpk1Fq {
     let k2_0 = Secpk1Fq::from_le_bytes(get_k_2_0());
     let k2_1 = Secpk1Fq::from_le_bytes(get_k_2_1());
-    x_2 + k2_1*x + k2_0
+    x_2 + k2_1 * x + k2_0
 }
 
 /*
@@ -59,7 +57,7 @@ fn YNum(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
     let k3_1 = Secpk1Fq::from_le_bytes(get_k_3_1());
     let k3_2 = Secpk1Fq::from_le_bytes(get_k_3_2());
     let k3_3 = Secpk1Fq::from_le_bytes(get_k_3_3());
-    k3_0 + k3_1*x + k3_2*x_2 + k3_3*x_3
+    k3_0 + k3_1 * x + k3_2 * x_2 + k3_3 * x_3
 }
 
 /*
@@ -72,9 +70,8 @@ fn YDen(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
     let k4_0 = Secpk1Fq::from_le_bytes(get_k_4_0());
     let k4_1 = Secpk1Fq::from_le_bytes(get_k_4_1());
     let k4_2 = Secpk1Fq::from_le_bytes(get_k_4_2());
-    k4_0 + k4_1*x + k4_2*x_2 + x_3
+    k4_0 + k4_1 * x + k4_2 * x_2 + x_3
 }
-
 
 #[test]
 fn test_IsoMap() {
@@ -109,7 +106,6 @@ fn test_IsoMap() {
     assert(actual_x == x_mapped);
     assert(actual_y == y_mapped);
 }
-
 
 // Constants
 fn get_k_1_0() -> [u8] {

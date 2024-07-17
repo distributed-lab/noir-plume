@@ -105,6 +105,8 @@ fn rev_bits(num: u8) -> u8 {
     res as u8
 }
 
+// Not compiled if the MSG_LEN constant has a value other than 3
+/*
 #[test]
 fn test_MsgPrime() {
     let msg = [97, 98, 99];
@@ -121,6 +123,7 @@ fn test_MsgPrime() {
     ];
     assert(msg_prime == expected_msg_prime);
 }
+*/
 
 #[test]
 fn test_b0() {
