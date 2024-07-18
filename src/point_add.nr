@@ -1,6 +1,7 @@
 use dep::std::bigint::Secpk1Fq;
 use crate::utils::{to_u8_arr, to_u8_32};
 
+// https://www.rareskills.io/post/elliptic-curve-addition
 pub fn PointAdd(x0: [u8; 32], y0: [u8; 32], x1: [u8; 32], y1: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     let x0 = Secpk1Fq::from_le_bytes(to_u8_arr(x0));
     let y0 = Secpk1Fq::from_le_bytes(to_u8_arr(y0));

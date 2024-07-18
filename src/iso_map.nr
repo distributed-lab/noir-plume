@@ -2,6 +2,7 @@ use dep::std::bigint::Secpk1Fq;
 use crate::constants::SECP256K1_PRIME;
 use crate::utils::{to_u8_arr, to_u8_32};
 
+// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-3-isogeny-map-for-secp256k1
 pub fn IsoMap(x: [u8; 32], y: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     let x = Secpk1Fq::from_le_bytes(to_u8_arr(x));
     let y = Secpk1Fq::from_le_bytes(to_u8_arr(y));

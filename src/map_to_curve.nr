@@ -5,6 +5,8 @@ use crate::utils::{
     to_u8_arr, to_u8_32
 };
 
+// Constants are taken from the .circom code, converted to a little endian bytes array
+// https://github.com/geometryxyz/secp256k1_hash_to_curve/blob/main/circuits/circom/constants.circom
 fn get_z() -> [u8] {
     [
         36, 252, 255, 255, 254, 255, 255, 255,
@@ -45,7 +47,7 @@ fn get_b() -> [u8] {
     [235, 6]
 }
 
-// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#simple-swu
+// Formula from https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-simplified-shallue-van-de-w
 pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     let u = Secpk1Fq::from_le_bytes(to_u8_arr(u));
     let z = Secpk1Fq::from_le_bytes(get_z());
@@ -60,7 +62,10 @@ pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
     let gx2 = x2*x2*x2 + a*x2 + b;
     let (x, y) = XY2Selector(x1, x2, gx1, gx2);
 
-    let y = if BigUint::from_Secpk1Fq(u).is_even() == BigUint::from_Secpk1Fq(y).is_even() {
+    let left_sgn  = (u.to_le_bytes()[0] as Field).to_le_bits(8)[0];
+    let right_sgn = (y.to_le_bytes()[0] as Field).to_le_bits(8)[0];
+    
+    let y = if left_sgn == right_sgn {
         y
     } else {
         y - y - y
@@ -83,14 +88,6 @@ fn XY2Selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Sec
     let s2 = gx2_sqrt * gx2_sqrt == gx2;
     assert(s1 ^ s2);
 
-    /*
-    println(gx1);
-    println(gx2);
-    println("\nsqrt*sqrt");
-    println(gx1_sqrt * gx1_sqrt);
-    println(gx2_sqrt * gx2_sqrt);
-    */
-
     if s1 {
         (x1, gx1_sqrt)
     } else {
@@ -100,11 +97,11 @@ fn XY2Selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Sec
 
 // p is SECP256K1_PRIME, then
 // mod_mul_inv(a, p) = a ^ (p-2) % p
-// use binary power, for O(logN) time complexity
 fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
     bin_pow(num, Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) - Secpk1Fq::from_le_bytes(&[2]))
 }
 
+// Binary power algorithm https://cp-algorithms.com/algebra/binary-exp.html
 fn bin_pow(mut num: Secpk1Fq, pow: Secpk1Fq) -> Secpk1Fq {
     let mut res = Secpk1Fq::from_le_bytes(&[1]);
     let mut exp = pow.to_le_bytes();

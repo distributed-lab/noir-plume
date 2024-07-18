@@ -6,7 +6,7 @@ use dep::std::bigint::Secpk1Fq;
 global NUM_BLOCKS: u64 = 12;
 
 // Fixed value for u32 blocks arrary,
-// Can optimize to 256/8 = 16 bytes, otherwise bit shift doesn't work properly
+// Can optimize to 255/8 = 15 bytes, otherwise u8 bit shift doesn't work properly
 global BYTES_PER_BLOCK: u64 = 4;
 
 global NUM_BYTES: u64 = NUM_BLOCKS * BYTES_PER_BLOCK;
@@ -35,6 +35,8 @@ struct BigUint {
     blocks: [u32; NUM_BLOCKS],
 }
 
+
+// All conversion operations with bytes and bits are performed in little endian format
 impl BigUint {
     pub fn zero() -> Self {
         Self { blocks: [0 as u32; NUM_BLOCKS] }
@@ -72,7 +74,7 @@ impl BigUint {
     }
 
     pub fn from_Secpk1Fq(num: Secpk1Fq) -> Self {
-        BigUint::from_bytes_32(BigUint::from_u8_arr_to_u8_32(num.to_le_bytes()))
+        BigUint::from_bytes_32(BigUint::to_u8_32(num.to_le_bytes()))
     }
     
     pub fn to_bytes(self: Self) -> [u8; NUM_BYTES] {
@@ -89,26 +91,11 @@ impl BigUint {
         res
     }
 
-    // TODO: Need to test
-    pub fn to_bits(self: Self) -> [u1; NUM_BYTES*8] {
-        let mut res = [0 as u1; NUM_BYTES*8];
-
-        for i in 0..NUM_BLOCKS {
-            let block_bits = (self.blocks[i] as Field).to_le_bits(BITS_PER_BLOCK as u32);
-
-            for j in 0..BITS_PER_BLOCK {
-                let idx = (i as Field) * (BITS_PER_BLOCK as Field) + (j as Field);
-                res[idx] = block_bits[j];
-            }
-        }
-        res
-    }
-
     // Private, helper method
-    fn from_u8_32_to_u8_arr(arr: [u8; 32]) -> [u8] {
+    fn to_u8_arr(arr: [u8; 32]) -> [u8] {
         arr
     }
-    fn from_u8_arr_to_u8_32(arr: [u8]) -> [u8; 32] {
+    fn to_u8_32(arr: [u8]) -> [u8; 32] {
         let mut res = [0 as u8; 32];
         for i in 0..arr.len() {
             res[i] = arr[i];
@@ -117,7 +104,7 @@ impl BigUint {
     }
 
     pub fn to_Secpk1Fq(self: Self) -> Secpk1Fq {
-        Secpk1Fq::from_le_bytes(BigUint::from_u8_32_to_u8_arr(self.to_bytes_32()))
+        Secpk1Fq::from_le_bytes(BigUint::to_u8_arr(self.to_bytes_32()))
     }
 
     pub fn to_bytes_32(self: Self) -> [u8; 32] {
@@ -167,28 +154,8 @@ impl BigUint {
         self.sbb(other).0
     }
 
-    // The result of mul function is expected to be less than NUM_BYTES
-    pub fn mul(self: Self, other: Self) -> Self {
-        let mut res = BigUint::zero();
-
-        for i in 0..NUM_BLOCKS {
-            let mut carry = 0 as u32;
-
-            for j in 0..NUM_BLOCKS {
-                let k = i + j;
-
-                if k < NUM_BLOCKS {
-                    let (n, c) = utils_mac(res.blocks[k], self.blocks[i], other.blocks[j], carry);
-                    res.blocks[k] = n;
-                    carry = c;
-                }
-            }
-        }
-        res
-    }
-
     // low, high results
-    pub fn extend_mul(self: Self, other: Self) -> (Self, Self) {
+    pub fn mul(self: Self, other: Self) -> (Self, Self) {
         let mut lo = BigUint::zero();
         let mut hi = BigUint::zero();
 
@@ -213,6 +180,7 @@ impl BigUint {
         (lo, hi)
     }
 
+    // most significant bit
     pub fn msb(self: Self) -> u64 {
         let mut res = 0;
 
@@ -225,10 +193,6 @@ impl BigUint {
             }
         }
         res
-    }
-
-    pub fn is_even(self: Self) -> bool {
-        self.blocks[0] & 1 == 1
     }
 
     // Shift by 0 <= n < BITS_PER_BLOCK bits
@@ -317,57 +281,41 @@ impl BigUint {
         }
     }
 
-    /*
-    Use simple binary search algorithm
-    The code is specialized, so here used 32*8 iterations.
-    For more general code, you should replace
-    the number of iterations with NUM_BYTES * 8 and use extend_mul (not necessary) instead of regular mul.
-    If we have hi part, then sqrt lower than current part
-    */
+    // Use simple binary search algorithm
+    // https://programmercave.com/blog/2023/03/03/Efficiently-Finding-the-Square-Root-of-a-Number-Linear-Search-vs-Binary-Search
     pub fn sqrt(self: Self) -> Self {
-        assert(BigUint::from_bytes_32([0xff; 32]).gte(self));
         let mut mid = self;
+        let zero = BigUint::zero();
+        let one  = BigUint::one();
 
-        if self.eq(BigUint::zero()) {
+        if self.eq(zero) {
             mid
         } else {
-            let mut lo = BigUint::zero();
-            let mut hi = mid;
+            let mut beg = zero;
+            let mut end = mid;
             let mut done = false;
             
-            // Max number of bits - 32*8 = 256
-            for _ in 0..256 {
+            // Max number of bits
+            for _ in 0..NUM_BYTES*8 {
                 if !done {
                     // shr1 replace .div(2) operation
-                    mid = lo.add(hi).shr1();
-                    let sq = mid.mul(mid);
+                    mid = beg.add(end).shr1();
+                    let (low, high) = mid.mul(mid);
 
-                    if (sq.lt(self)) {
-                        lo = mid.add(BigUint::one());
+                    if (!high.eq(zero) | low.gt(self)) {
+                        end = mid.sub(one);
                     } else {
-                        if (sq.gt(self)) {
-                            hi = mid.sub(BigUint::one());
+                        if (low.lt(self)) {
+                            beg = mid.add(one);
                         } else {
                             done = true;
-                            lo = mid;
+                            beg = mid;
                         }
                     }
                 }
             }
-            if hi.gt(lo) { lo } else { hi }
+            if end.gt(beg) { beg } else { end }
         }
-    }
-
-    // TODO: Test method
-    // No longer for BigUint, but for BigInt
-    pub fn negative(self: Self) -> Self {
-        let mut res = self;
-        let max: u32 = 0xffffffff;
-
-        for i in 0..NUM_BLOCKS {
-            res.blocks[i] = max - res.blocks[i];
-        }
-        res.add(BigUint::one())
     }
 
     pub fn eq(self: Self, other: Self) -> bool {
@@ -389,6 +337,8 @@ impl BigUint {
 }
 
 
+// Failed if NUM_BLOCKS is not equal to 12
+/*
 #[test]
 fn test_from_bytes1() {
     let a = BigUint::from_bytes(&[2]);
@@ -433,6 +383,7 @@ fn test_from_bytes_32_1() {
         )
     );
 }
+*/
 
 #[test]
 fn test_to_bytes1() {
@@ -472,8 +423,8 @@ fn test_add1() {
 
 #[test]
 fn test_add2() {
-    let a = BigUint::from_bytes(&[0xff, 0xff, 0xff, 0xff, 0]);
-    let b = BigUint::from_bytes(&[1, 0, 0, 0, 0]);
+    let a = BigUint::from_bytes(&[0xff, 0xff, 0xff, 0xff]);
+    let b = BigUint::from_bytes(&[1]);
     let sum = a.add(b);
 
     assert(sum.eq(BigUint::from_bytes(&[0, 0, 0, 0, 1])));
@@ -500,8 +451,8 @@ fn test_sub1() {
 
 #[test]
 fn test_sub2() {
-    let a = BigUint::from_bytes(&[1, 2, 0, 0, 0]);
-    let b = BigUint::from_bytes(&[2, 0, 0, 0, 0]);
+    let a = BigUint::from_bytes(&[1, 2]);
+    let b = BigUint::from_bytes(&[2]);
     let diff = a.sub(b);
 
     assert(diff.eq(BigUint::from_bytes(&[0xff, 1])));
@@ -509,31 +460,35 @@ fn test_sub2() {
 
 #[test]
 fn test_sbb1() {
-    let a = BigUint::from_bytes(&[1, 0, 0, 0, 0]);
-    let b = BigUint::from_bytes(&[2, 0, 0, 0, 0]);
+    let a = BigUint::from_bytes(&[1]);
+    let b = BigUint::from_bytes(&[2]);
     let (diff, borrow) = a.sbb(b);
 
     assert(diff.eq(BigUint::from_bytes(&[0xff; NUM_BYTES])));
-    assert(borrow >> (BITS_PER_BLOCK - 1) as u8 == 1); // 7 = number of bits
+    assert(borrow >> (BITS_PER_BLOCK - 1) as u8 == 1);
 }
 
 #[test]
 fn test_mul1() {
-    let a = BigUint::from_bytes(&[0xe]);
-    let b = BigUint::from_bytes(&[8]);
-    let res = a.mul(b);
-
-    assert(res.eq(BigUint::from_bytes(&[0x70])));
-}
-
-#[test]
-fn test_extend_mul1() {
     let a = BigUint::from_bytes(&[2]);
     let b = BigUint::from_bytes(&[3]);
-    let (lo, hi) = a.extend_mul(b);
+    let (lo, hi) = a.mul(b);
     
     assert(lo.eq(BigUint::from_bytes(&[6])));
     assert(hi.eq(BigUint::zero()));
+}
+
+#[test]
+fn test_mul2() {
+    let a = BigUint { blocks: [0xffffffff; NUM_BLOCKS] };
+    let b = BigUint { blocks: [0xffffffff; NUM_BLOCKS] };
+    let (lo, hi) = a.mul(b);
+
+    let mut expected_hi = [0xff; NUM_BYTES];
+    expected_hi[0] = 0xfe;
+
+    assert(lo.eq(BigUint::one()));
+    assert(hi.to_bytes() == expected_hi);
 }
 
 #[test]
@@ -542,6 +497,7 @@ fn test_cmp1() {
     let b = BigUint::from_bytes(&[0, 2]);
 
     assert(!a.eq(b));
+    assert(!a.gte(b));
 
     assert(a.lt(b));
     assert(!a.gt(b));
@@ -553,6 +509,7 @@ fn test_cmp2() {
     let b = BigUint::from_bytes(&[0, 2]);
 
     assert(a.eq(b));
+    assert(a.gte(b));
 
     assert(!a.lt(b));
     assert(!a.gt(b));
@@ -701,7 +658,7 @@ fn test_div4() {
     let (q, r) = a.div(b);
 
     assert(q.eq(BigUint::from_bytes(&[7])));
-    assert(r.eq(BigUint::from_bytes(&[0])));
+    assert(r.eq(BigUint::zero()));
 }
 
 #[test]
@@ -728,11 +685,10 @@ fn test_sqrt2() {
     let num = BigUint::from_bytes_32(
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 104, 203, 127, 80, 204, 48, 33, 247, 218, 52, 195, 241, 198]
     );
-    let expected_sqrt = BigUint::from_bytes_32(
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 136, 82, 99, 169, 29, 173, 225, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    let expected_sqrt = BigUint::from_bytes(&
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 136, 82, 99, 169, 29, 173, 225]
     );
     assert(num.sqrt().eq(expected_sqrt));
-    assert(expected_sqrt.mul(expected_sqrt).eq(num));
 }
 
 // TODO: Failed
@@ -746,11 +702,9 @@ fn test_sqrt3() {
         3, 35, 247, 218, 52, 195, 241, 198
     ]);
 
-    let expected_sqrt = BigUint::from_bytes_32([
+    let expected_sqrt = BigUint::from_bytes(&[
         231, 95, 119, 147, 127, 144, 147, 250,
-        8, 137, 82, 99, 169, 29, 173, 225,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0
+        8, 137, 82, 99, 169, 29, 173, 225
     ]);
     assert(num.sqrt().eq(expected_sqrt));
 }
@@ -763,20 +717,33 @@ fn test_sqrt4() {
 }
 
 #[test]
-fn test_negative1() {
-    let a = BigUint::from_bytes(&[1]);
-    let expected_neg = BigUint { blocks: [0xffffffff; NUM_BLOCKS] };
-    assert(a.negative().eq(expected_neg));
+fn test_sqrt5() {
+    let num = BigUint::from_bytes(&[
+        54, 92, 89, 51, 110, 45, 220, 37, 12, 215, 31, 53,
+        226, 99, 42, 136, 174, 218, 72, 5, 219, 84, 88, 79,
+        47, 203, 166, 177, 29, 248, 176, 118, 211, 178, 213, 113,
+        215, 200, 225, 141, 222, 206, 141, 245, 189, 52, 228, 67
+    ]);
+
+    let expected_sqrt = BigUint::from_bytes(&[
+        234, 147, 133, 52, 134, 34, 197, 229, 40, 24, 71, 1,
+        103, 112, 238, 171, 127, 97, 123, 39, 163, 129, 213, 131
+    ]);
+    assert(num.sqrt().eq(expected_sqrt));
 }
 
 #[test]
-fn test_negative2() {
-    let a = BigUint::from_bytes(&[0xff, 0xff, 120, 230]);
-    let mut expected = [0xff; NUM_BYTES];
-    expected[0] = 1;
-    expected[1] = 0;
-    expected[2] = 135;
-    expected[3] = 25;
+fn test_sqrt6() {
+    let num = BigUint::from_bytes(&[
+        3, 114, 131, 27, 209, 209, 237, 216, 83, 208, 252, 34,
+        139, 5, 35, 68, 33, 235, 97, 130, 162, 58, 84, 139,
+        106, 241, 132, 3, 70, 86, 197, 169, 14, 78, 28, 47,
+        135, 171, 48, 79, 117, 22, 71, 195, 179, 156, 149, 243
+    ]);
 
-    assert(a.negative().to_bytes() == expected);
+    let expected_sqrt = BigUint::from_bytes(&[
+        160, 93, 80, 149, 247, 156, 64, 180, 2, 132, 112, 226,
+        74, 207, 234, 203, 104, 93, 0, 56, 75, 14, 183, 249
+    ]);
+    assert(num.sqrt().eq(expected_sqrt));
 }

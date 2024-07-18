@@ -3,6 +3,7 @@ use crate::map_to_curve::MapToCurve;
 use crate::iso_map::IsoMap;
 use crate::point_add::PointAdd;
 
+// Based on https://github.com/geometryxyz/secp256k1_hash_to_curve code
 pub fn hash_to_curve<N>(msg: [u8; N]) -> ([u8; 32], [u8; 32]) {
     // Step 1. u = hash_to_field(msg)
     let h2f = hash_to_field(msg);
@@ -20,14 +21,14 @@ pub fn hash_to_curve<N>(msg: [u8; N]) -> ([u8; 32], [u8; 32]) {
 }
 
 /*
-These test cases are commented out because they depend on the MSG_LEN constant,
-if the msg length is not equal to MSG_LEN,
-then both the tests and the entire program will not compile
+These test cases are commented out because they depend on the MSG_LEN constant.
+If the msg.len() in test case is not equal to MSG_LEN, then it Failed
 */
 
-// To test a specific test, change the value of MSG_LEN to the length of the msg variable
+// To test a specific test, change the value of MSG_LEN to the length of the "msg" variable
 
 /*
+// Test cases are taken from https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-secp256k1_xmdsha-256_sswu_r
 #[test]
 fn test_hash_to_curve_for_empty_msg() {
     let msg = [];

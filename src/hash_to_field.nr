@@ -3,6 +3,7 @@ use crate::constants::SECP256K1_PRIME;
 use dep::std::bigint::Secpk1Fq;
 use crate::biguint::BigUint;
 
+// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
 pub fn hash_to_field<N>(msg: [u8; N]) -> [[u8; 32]; 2] {
     let expand_message_xmd = ExpandMessageXmd(msg);
 
@@ -20,19 +21,19 @@ pub fn hash_to_field<N>(msg: [u8; N]) -> [[u8; 32]; 2] {
 }
 
 fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
-    // Need to convert in Big Endian format
-    let a = BigUint::from_bytes(&[
-        ui[47], ui[46], ui[45], ui[44], ui[43], ui[42], ui[41], ui[40],
-        ui[39], ui[38], ui[37], ui[36], ui[35], ui[34], ui[33], ui[32],
-        ui[31], ui[30], ui[29], ui[28], ui[27], ui[26], ui[25], ui[24],
-        ui[23], ui[22], ui[21], ui[20], ui[19], ui[18], ui[17], ui[16],
-        ui[15], ui[14], ui[13], ui[12], ui[11], ui[10], ui[9], ui[8],
-        ui[7], ui[6], ui[5], ui[4], ui[3], ui[2], ui[1], ui[0],
-    ]
-    );
-
+    let a = BigUint::from_bytes(get_be_bytes(ui));
     let rem = a.div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
     rem.to_bytes_32()
+}
+
+fn get_be_bytes(ui: [u8; 48]) -> [u8] {
+    let mut res = ui;
+    for i in 0..24 {
+        let temp = res[i];
+        res[i] = res[47-i];
+        res[47-i] = temp;
+    }
+    res
 }
 
 
