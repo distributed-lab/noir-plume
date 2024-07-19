@@ -4,9 +4,8 @@ use crate::constants::SECP256K1_PRIME;
 use crate::biguint::BigUint;
 use crate::ec_ops::Point;
 
-
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
-pub fn hash_to_field<N>(msg: [u8; N]) -> Point {
+pub fn HashToField<N>(msg: [u8; N]) -> Point {
     let expand_message_xmd = ExpandMessageXmd(msg);
 
     let mut u0_bytes_to_registers = [0 as u8; 48];

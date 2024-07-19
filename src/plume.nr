@@ -4,6 +4,7 @@ use dep::std::sha256::sha256_var;
 use crate::utils::{to_u8_arr, to_u8_32, mod_mul_inv};
 use crate::constants::{Gx, Gy};
 use crate::ec_ops::{Point, PointMul, PointAdd};
+use crate::hash_to_curve::HashToCurve;
 
 // assert at the end
 pub fn plume_v1<N>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: [u8; 32]) -> [u8; 32] {

@@ -1,12 +1,12 @@
-use crate::hash_to_field::hash_to_field;
+use crate::hash_to_field::HashToField;
 use crate::map_to_curve::MapToCurve;
 use crate::iso_map::IsoMap;
 use crate::ec_ops::{Point, PointAdd};
 
 // Based on https://github.com/geometryxyz/secp256k1_hash_to_curve code
-pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
+pub fn HashToCurve<N>(msg: [u8; N]) -> Point {
     // Step 1. u = hash_to_field(msg)
-    let h2f = hash_to_field(msg);
+    let h2f = HashToField(msg);
 
     // Step 2. Q0 = map_to_curve(u[0])
     // Step 3. Q1 = map_to_curve(u[1])
@@ -29,7 +29,7 @@ If the msg.len() in test case is not equal to MSG_LEN, then it Failed
 #[test]
 fn test_hash_to_curve_for_empty_msg() {
     let msg = [];
-    let (px, py) = hash_to_curve(msg);
+    let (px, py) = HashToCurve(msg);
 
     let expected_px = [
         70, 19, 235, 223, 45, 133, 181, 183,
@@ -50,7 +50,7 @@ fn test_hash_to_curve_for_empty_msg() {
 #[test]
 fn test_hash_to_curve_for_msg_abc() {
     let msg = [97, 98, 99];
-    let (px, py) = hash_to_curve(msg);
+    let (px, py) = HashToCurve(msg);
 
     let expected_px = [
         75, 44, 203, 179, 31, 241, 159, 189,
@@ -72,7 +72,7 @@ fn test_hash_to_curve_for_msg_abc() {
 fn test_hash_to_curve_for_msg_abcdef0123456789() {
     // msg.len() = 16
     let msg = [97, 98, 99, 100, 101, 102, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57];
-    let (px, py) = hash_to_curve(msg);
+    let (px, py) = HashToCurve(msg);
 
     let expected_px = [
         58, 14, 75, 103, 208, 36, 179, 72,
@@ -105,7 +105,7 @@ fn test_hash_to_curve_for_msg_q128() {
         113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
         113, 113, 113, 113, 113, 113
     ];
-    let (px, py) = hash_to_curve(msg);
+    let (px, py) = HashToCurve(msg);
 
     let expected_px = [
         233, 144, 24, 228, 2, 177, 114, 127,
@@ -154,7 +154,7 @@ fn test_hash_to_curve_for_msg_a512() {
         97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
         97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97
     ];
-    let (px, py) = hash_to_curve(msg);
+    let (px, py) = HashToCurve(msg);
 
     let expected_px = [
         152, 201, 183, 140, 31, 140, 253, 230,
