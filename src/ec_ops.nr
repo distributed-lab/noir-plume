@@ -3,7 +3,7 @@ use crate::utils::{to_u8_arr, to_u8_32};
 
 type Point = ([u8; 32], [u8; 32]);
 
-// Operations take from http://delta.cs.cinvestav.mx/~francisco/cripto/ellipticbg.pdf doc
+// Operations taken from the http://delta.cs.cinvestav.mx/~francisco/cripto/ellipticbg.pdf doc
 pub fn PointAdd(p0: Point, p1: Point) -> Point {
     let x0 = Secpk1Fq::from_le_bytes(to_u8_arr(p0.0));
     let y0 = Secpk1Fq::from_le_bytes(to_u8_arr(p0.1));
@@ -27,24 +27,19 @@ fn point_add(x0: Secpk1Fq, y0: Secpk1Fq, x1: Secpk1Fq, y1: Secpk1Fq) -> (Secpk1F
 fn double_point(x: Secpk1Fq, y: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
     let two = Secpk1Fq::from_le_bytes(&[2]);
     let three = Secpk1Fq::from_le_bytes(&[3]);
-    let a = Secpk1Fq::from_le_bytes(&[
+    let a = Secpk1Fq::from_le_bytes(
+        &[
         51, 69, 68, 26, 192, 71, 84, 64,
         93, 14, 111, 203, 99, 211, 83, 233,
         114, 210, 245, 240, 88, 85, 138, 160,
         220, 26, 102, 221, 171, 49, 135, 63
-    ]);
+    ]
+    );
 
     let lambda = (three * x * x + a) / (two * y);
-    let x3 = lambda*lambda - two*x;
-    let y3 = lambda*(x - x3) - y;
+    let x3 = lambda * lambda - two * x;
+    let y3 = lambda * (x - x3) - y;
     (x3, y3)
-}
-
-// TODO: doesn't work, need to recode or delete
-fn get_inf_point(x: Secpk1Fq, y: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
-    let inf = point_add(x, y, x, y - y - y);
-    //inf
-    (Secpk1Fq::from_le_bytes(&[0]), Secpk1Fq::from_le_bytes(&[0]))
 }
 
 // Can do it without first_add var using point at infinity
@@ -70,7 +65,6 @@ pub fn PointMul(scalar: [u8; 32], p: Point) -> Point {
     }
     (to_u8_32(res.0.to_le_bytes()), to_u8_32(res.1.to_le_bytes()))
 }
-
 
 #[test]
 fn test_point_add_with_msg_abc() {
@@ -145,30 +139,6 @@ fn test_double_point() {
     assert(to_u8_32(actual_p.0.to_le_bytes()) == res_x);
     assert(to_u8_32(actual_p.1.to_le_bytes()) == res_y);
 }
-
-// TODO: Failed, need to rework or delete
-/*
-#[test]
-fn test_point_at_infinity() {
-    let p = ([
-        215, 34, 83, 138, 195, 143, 59, 82,
-        216, 218, 186, 187, 204, 4, 102, 67,
-        34, 23, 169, 179, 209, 87, 152, 177,
-        95, 132, 38, 212, 50, 148, 221, 7
-    ], [
-        63, 179, 46, 18, 103, 164, 20, 64,
-        237, 27, 175, 187, 35, 229, 224, 203,
-        11, 85, 184, 144, 213, 187, 119, 50,
-        254, 207, 56, 81, 239, 136, 69, 96
-    ]);
-    let x = Secpk1Fq::from_le_bytes(to_u8_arr(p.0));
-    let y = Secpk1Fq::from_le_bytes(to_u8_arr(p.1));
-
-    let (inf_x, inf_y) = get_inf_point(x, y);
-    assert(double_point(inf_x, inf_y) == (inf_x, inf_y));
-    assert(point_add(x, y, inf_x, inf_y) == (x, y));
-}
-*/
 
 #[test]
 fn point_mul_with_scalar() {

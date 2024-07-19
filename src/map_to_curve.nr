@@ -2,7 +2,9 @@ use dep::std::bigint::Secpk1Fq;
 use crate::biguint::BigUint;
 use crate::constants::SECP256K1_PRIME;
 use crate::ec_ops::Point;
-use crate::utils::{to_u8_arr, to_u8_32};
+use crate::utils::{
+    to_u8_arr, to_u8_32, mod_mul_inv, mod_sqrt
+};
 
 // Constants are taken from the .circom code, converted to a little endian bytes array
 // https://github.com/geometryxyz/secp256k1_hash_to_curve/blob/main/circuits/circom/constants.circom
@@ -72,13 +74,6 @@ pub fn MapToCurve(u: [u8; 32]) -> Point {
     (to_u8_32(x.to_le_bytes()), to_u8_32(y.to_le_bytes()))
 }
 
-// We use the formula R = num^((p+1)/4), since SECP256K1_PRIME % 4 == 3
-// https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm
-fn mod_sqrt(num: Secpk1Fq) -> Secpk1Fq {
-    let p_plus_one = Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) + Secpk1Fq::from_le_bytes(&[1]);
-    bin_pow(num, p_plus_one / Secpk1Fq::from_le_bytes(&[4]))
-}
-
 fn XY2Selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
     let gx1_sqrt = mod_sqrt(gx1);
     let gx2_sqrt = mod_sqrt(gx2);
@@ -92,30 +87,6 @@ fn XY2Selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Sec
     } else {
         (x2, gx2_sqrt)
     }
-}
-
-// p is SECP256K1_PRIME, then
-// mod_mul_inv(a, p) = a ^ (p-2) % p
-fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
-    bin_pow(num, Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) - Secpk1Fq::from_le_bytes(&[2]))
-}
-
-// Binary power algorithm https://cp-algorithms.com/algebra/binary-exp.html
-fn bin_pow(mut num: Secpk1Fq, pow: Secpk1Fq) -> Secpk1Fq {
-    let mut res = Secpk1Fq::from_le_bytes(&[1]);
-    let exp = pow.to_le_bytes();
-
-    for i in 0..exp.len() {
-        let byte = (exp[i] as Field).to_le_bits(8);
-
-        for j in 0..8 {
-            if byte[j] == 1 {
-                res = res * num;
-            }
-            num = num * num;
-        }
-    }
-    res
 }
 
 
