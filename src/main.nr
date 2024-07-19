@@ -16,15 +16,6 @@ pub fn main(
     pk: [[u8; 32]; 2],
     nullifier: [u8; 32]
 ) {
-    plume::plume_v1(msg, c, s, (pk[0], pk[1]), nullifier);
-    // TODO: delete later
-    /*
-    let (x, y) = hash_to_curve::hash_to_curve(msg);
-
-    print("x_le_bytes = ");
-    println(x);
-
-    print("y_le_bytes = ");
-    println(y);
-    */
+    let expected_c = plume::plume_v1(msg, c, s, (pk[0], pk[1]), nullifier);
+    assert(c == expected_c);
 }
