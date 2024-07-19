@@ -35,7 +35,6 @@ struct BigUint {
     blocks: [u32; NUM_BLOCKS],
 }
 
-
 // All conversion operations with bytes and bits are performed in little endian format
 impl BigUint {
     pub fn zero() -> Self {
