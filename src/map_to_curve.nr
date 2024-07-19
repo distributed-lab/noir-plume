@@ -1,9 +1,8 @@
 use dep::std::bigint::Secpk1Fq;
 use crate::biguint::BigUint;
 use crate::constants::SECP256K1_PRIME;
-use crate::utils::{
-    to_u8_arr, to_u8_32
-};
+use crate::ec_ops::Point;
+use crate::utils::{to_u8_arr, to_u8_32};
 
 // Constants are taken from the .circom code, converted to a little endian bytes array
 // https://github.com/geometryxyz/secp256k1_hash_to_curve/blob/main/circuits/circom/constants.circom
@@ -48,7 +47,7 @@ fn get_b() -> [u8] {
 }
 
 // Formula from https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-simplified-shallue-van-de-w
-pub fn MapToCurve(u: [u8; 32]) -> ([u8; 32], [u8; 32]) {
+pub fn MapToCurve(u: [u8; 32]) -> Point {
     let u = Secpk1Fq::from_le_bytes(to_u8_arr(u));
     let z = Secpk1Fq::from_le_bytes(get_z());
     
@@ -104,7 +103,7 @@ fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
 // Binary power algorithm https://cp-algorithms.com/algebra/binary-exp.html
 fn bin_pow(mut num: Secpk1Fq, pow: Secpk1Fq) -> Secpk1Fq {
     let mut res = Secpk1Fq::from_le_bytes(&[1]);
-    let mut exp = pow.to_le_bytes();
+    let exp = pow.to_le_bytes();
 
     for i in 0..exp.len() {
         let byte = (exp[i] as Field).to_le_bits(8);

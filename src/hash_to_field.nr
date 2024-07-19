@@ -1,10 +1,12 @@
+use dep::std::bigint::Secpk1Fq;
 use crate::expand_message_xmd::ExpandMessageXmd;
 use crate::constants::SECP256K1_PRIME;
-use dep::std::bigint::Secpk1Fq;
 use crate::biguint::BigUint;
+use crate::ec_ops::Point;
+
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
-pub fn hash_to_field<N>(msg: [u8; N]) -> [[u8; 32]; 2] {
+pub fn hash_to_field<N>(msg: [u8; N]) -> Point {
     let expand_message_xmd = ExpandMessageXmd(msg);
 
     let mut u0_bytes_to_registers = [0 as u8; 48];
@@ -17,7 +19,7 @@ pub fn hash_to_field<N>(msg: [u8; N]) -> [[u8; 32]; 2] {
 
     let u0_bytes_to_registers = BytesToRegisters(u0_bytes_to_registers);
     let u1_bytes_to_registers = BytesToRegisters(u1_bytes_to_registers);
-    [u0_bytes_to_registers, u1_bytes_to_registers]
+    (u0_bytes_to_registers, u1_bytes_to_registers)
 }
 
 fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {

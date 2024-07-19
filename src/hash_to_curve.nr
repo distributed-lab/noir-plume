@@ -1,23 +1,20 @@
 use crate::hash_to_field::hash_to_field;
 use crate::map_to_curve::MapToCurve;
 use crate::iso_map::IsoMap;
-use crate::point_add::PointAdd;
+use crate::ec_ops::{Point, PointAdd};
 
 // Based on https://github.com/geometryxyz/secp256k1_hash_to_curve code
-pub fn hash_to_curve<N>(msg: [u8; N]) -> ([u8; 32], [u8; 32]) {
+pub fn hash_to_curve<N>(msg: [u8; N]) -> Point {
     // Step 1. u = hash_to_field(msg)
     let h2f = hash_to_field(msg);
 
     // Step 2. Q0 = map_to_curve(u[0])
     // Step 3. Q1 = map_to_curve(u[1])
-    let (q0_x, q0_y) = MapToCurve(h2f[0]);
-    let (q1_x, q1_y) = MapToCurve(h2f[1]);
+    let q0 = MapToCurve(h2f.0);
+    let q1 = MapToCurve(h2f.1);
 
     // Step 4. Result = IsoMap(Q0) + IsoMap(Q1)
-    let (p0_x, p0_y) = IsoMap(q0_x, q0_y);
-    let (p1_x, p1_y) = IsoMap(q1_x, q1_y);
-
-    PointAdd(p0_x, p0_y, p1_x, p1_y)
+    PointAdd(IsoMap(q0), IsoMap(q1))
 }
 
 /*
