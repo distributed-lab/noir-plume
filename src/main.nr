@@ -14,8 +14,8 @@ pub fn main(
     c: [u8; 32],
     s: [u8; 32],
     pk: [[u8; 32]; 2],
-    nullifier: [u8; 32]
+    nullifier: [[u8; 32]; 2]
 ) {
-    let expected_c = plume::plume_v1(msg, c, s, (pk[0], pk[1]), nullifier);
-    assert(c == expected_c);
+    let expected_c = plume::plume_v1(msg, c, s, (pk[0], pk[1]), (nullifier[0], nullifier[1]));
+    assert(expected_c == c);
 }

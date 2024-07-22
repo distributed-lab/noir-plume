@@ -15,7 +15,7 @@ def run_command(command):
 def fill_values():
     c = ["0" for i in range(32)]
     msg = [str(i + 97) for i in range(3)]
-    nullifier = ["0" for i in range(32)]
+    nullifier = [["0" for i in range(32)] for _ in range(2)]
     pk = [["0" for i in range(32)] for _ in range(2)]
     s = ["0" for i in range(32)]
 
@@ -24,7 +24,7 @@ def fill_values():
 def format_array(arr):
     return "[" + ", ".join(f'"{item}"' for item in arr) + "]"
 
-def format_pk_array(pk):
+def format_double_array(pk):
     return "[" + ", ".join(format_array(subarr) for subarr in pk) + "]"
 
 def update_prover_toml(filepath):
@@ -40,8 +40,8 @@ def update_prover_toml(filepath):
     
     c_str = format_array(c)
     msg_str = format_array(msg)
-    nullifier_str = format_array(nullifier)
-    pk_str = format_pk_array(pk)
+    nullifier_str = format_double_array(nullifier)
+    pk_str = format_double_array(pk)
     s_str = format_array(s)
     
     with open(filepath, 'w') as f:

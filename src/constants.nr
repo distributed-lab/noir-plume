@@ -1,6 +1,5 @@
 global MSG_LEN = 3;
-global PADDING_SIZE = 64 + 2 + 50 + 1;
-global NUM_PREIMAGE_BYTES = 32 + 1 + 50;
+global PLUME_MSG_LEN = 3;//MSG_LEN + 33;  // Because a point is added, which is compressed to 33 bytes
 
 // 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1 constant in byte view
 global SECP256K1_PRIME = [
