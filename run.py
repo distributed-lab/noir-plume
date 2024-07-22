@@ -14,7 +14,8 @@ def run_command(command):
 
 def fill_values():
     c = ["0" for i in range(32)]
-    msg = [str(i + 97) for i in range(3)]
+    msg = [65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103]
+    #msg = [str(i + 97) for i in range(3)]
     nullifier = [["0" for i in range(32)] for _ in range(2)]
     pk = [["0" for i in range(32)] for _ in range(2)]
     s = ["0" for i in range(32)]

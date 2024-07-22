@@ -1,6 +1,6 @@
 use dep::std::bigint::Secpk1Fq;
 use crate::biguint::BigUint;
-use crate::constants::SECP256K1_PRIME;
+use crate::constants::{ZERO, SECP256K1_PRIME};
 use crate::ec_ops::Point;
 use crate::utils::{
     to_u8_arr, to_u8_32, mod_mul_inv, mod_sqrt
@@ -56,7 +56,7 @@ pub fn MapToCurve(u: [u8; 32]) -> Point {
     let tv1 = mod_mul_inv(z*z * u*u*u*u + z * u*u);
     let a = Secpk1Fq::from_le_bytes(get_a());
     let b = Secpk1Fq::from_le_bytes(get_b());
-    let x1 = ((b - b - b) / a) * (Secpk1Fq::from_le_bytes(&[1]) + tv1);
+    let x1 = ((ZERO - b) / a) * (Secpk1Fq::from_le_bytes(&[1]) + tv1);
 
     let gx1 = x1*x1*x1 + a*x1 + b;
     let x2 = z * u*u * x1;
@@ -69,7 +69,7 @@ pub fn MapToCurve(u: [u8; 32]) -> Point {
     let y = if left_sgn == right_sgn {
         y
     } else {
-        y - y - y
+        ZERO - y
     };
     (to_u8_32(x.to_le_bytes()), to_u8_32(y.to_le_bytes()))
 }
