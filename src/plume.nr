@@ -6,21 +6,28 @@ use crate::constants::{ZERO, PLUME_MSG_LEN};
 use crate::ec_ops::{Point, PointMul, PointAdd};
 use crate::hash_to_curve::HashToCurve;
 
+// r*G - r_point
+// r*h - hashed_to_curve_r
+// sha256(G || Pk || H || N || r*G || r*H)
 pub fn plume_v1<N>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) {
-    // r*G - r_point
-    // r*h - hashed_to_curve_r
-    // sha256(G || Pk || H || N || r*G || r*H)
-
     let (r_point, hashed_to_curve_r, hashed_to_curve) = check_ec_equations(msg, c, s, pk, nullifier);
-    let mut actual_c = sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
-
-    // Reverse bytes
-    for i in 0..16 {
-        let temp = actual_c[i];
-        actual_c[i] = actual_c[31-i];
-        actual_c[31-i] = temp;
-    }
+    let actual_c = rev_bytes_32(sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r));
     assert(actual_c == c);
+}
+
+pub fn plume_v2<N>(msg: [u8; N], c2: [u8; 32], s2: [u8; 32], pk: Point, nullifier: Point) {
+    let (r_point, hashed_to_curve_r, _) = check_ec_equations(msg, c2, s2, pk, nullifier);
+    let actual_c2 = rev_bytes_32(sha256_6_coordinates(nullifier, r_point, hashed_to_curve_r));
+    assert(actual_c2 == c2);
+}
+
+fn rev_bytes_32(mut bytes: [u8; 32]) -> [u8; 32] {
+    for i in 0..16 {
+        let temp = bytes[i];
+        bytes[i] = bytes[31-i];
+        bytes[31-i] = temp;
+    }
+    bytes
 }
 
 // Return values - r_point, hashed_to_curve_r, hashed_to_curve
@@ -68,6 +75,22 @@ fn compress_ec_point(pk: Point) -> [u8; 33] {
         compressed[32-i] = pk.0[i];
     }
     compressed
+}
+
+fn sha256_6_coordinates(nullifier: Point, gr: Point, hr: Point) -> [u8; 32] {
+    let mut compressed = [[0 as u8; 33]; 3];
+    compressed[0] = compress_ec_point(nullifier);
+    compressed[1] = compress_ec_point(gr);
+    compressed[2] = compress_ec_point(hr);
+
+    // Concatenate all compressed bytes
+    let mut res = [0 as u8; 99];
+    for i in 0..3 {
+        for j in 0..33 {
+            res[i*33 + j] = compressed[i][j];
+        }
+    }
+    sha256_var(res, res.len())
 }
 
 fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: Point) -> [u8; 32] {
@@ -255,9 +278,11 @@ fn test_sha_256_12_coordinates() {
     let actual_c = sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
 
     // method return bytes in reverse order
-    let expected_c = [
-        198, 167, 252, 44, 146, 109, 219, 175, 32, 115, 26, 71, 159, 182, 86, 111, 45, 170, 85, 20, 186, 174, 82, 35, 254, 59, 50, 237, 188, 232, 50, 84
-    ];
+    let expected_c = rev_bytes_32(
+        [
+        84, 50, 232, 188, 237, 50, 59, 254, 35, 82, 174, 186, 20, 85, 170, 45, 111, 86, 182, 159, 71, 26, 115, 32, 175, 219, 109, 146, 44, 252, 167, 198
+    ]
+    );
     assert(actual_c == expected_c);
 }
 
@@ -286,4 +311,30 @@ fn test_plume_v1() {
     let pk = PointMul(sk, (get_gx(), get_gy()));
     let nullifier = PointMul(sk, H);
     plume_v1(msg, c, s, pk, nullifier); // assert inside method
+}
+
+#[test]
+fn test_plume_v2() {
+    let msg = [
+        65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103
+    ];
+    let H = ([
+        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
+    ], [
+        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
+    ]);
+    let s2 = [
+        107, 19, 152, 128, 203, 119, 17, 15, 146, 90, 8, 17, 214, 75, 82, 146, 122, 148, 178, 115, 26, 123, 121, 0, 34, 248, 82, 100, 187, 143, 142, 82
+    ];
+
+    let c2 = [
+        150, 235, 52, 52, 54, 59, 107, 138, 158, 11, 171, 131, 167, 211, 91, 71, 75, 231, 149, 12, 114, 112, 74, 244, 212, 16, 80, 112, 23, 183, 191, 61
+    ];
+    let sk = [
+        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
+    ];
+
+    let pk = PointMul(sk, (get_gx(), get_gy()));
+    let nullifier = PointMul(sk, H);
+    plume_v2(msg, c2, s2, pk, nullifier); // assert inside method
 }
