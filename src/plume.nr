@@ -6,15 +6,21 @@ use crate::constants::{ZERO, PLUME_MSG_LEN};
 use crate::ec_ops::{Point, PointMul, PointAdd};
 use crate::hash_to_curve::HashToCurve;
 
-// assert at the end
-pub fn plume_v1<N>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) -> [u8; 32] {
+pub fn plume_v1<N>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) {
     // r*G - r_point
     // r*h - hashed_to_curve_r
     // sha256(G || Pk || H || N || r*G || r*H)
-    // assert c and sha256 output
 
     let (r_point, hashed_to_curve_r, hashed_to_curve) = check_ec_equations(msg, c, s, pk, nullifier);
-    sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r)
+    let mut actual_c = sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
+
+    // Reverse bytes
+    for i in 0..16 {
+        let temp = actual_c[i];
+        actual_c[i] = actual_c[31-i];
+        actual_c[31-i] = temp;
+    }
+    assert(actual_c == c);
 }
 
 // Return values - r_point, hashed_to_curve_r, hashed_to_curve
@@ -73,37 +79,13 @@ fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: P
     compressed[4] = compress_ec_point(gr);
     compressed[5] = compress_ec_point(hr);
 
-    // msg_bits = 6*33*8
-    // total_bits = (msg_bits // 512) * 512
-    // msg_bits % 512 != 0, then total_bits += 512
-    let mut msg = [0 as u1; 2048];
+    // Concatenate all compressed bytes
+    let mut res = [0 as u8; 198];
     for i in 0..6 {
         for j in 0..33 {
-            let byte = (compressed[i][j] as Field).to_le_bits(8);
-
-            for k in 0..8 {
-                msg[i*j*8 + j*8 + k] = byte[k];
-            }
+            res[i*33 + j] = compressed[i][j];
         }
     }
-
-    // total bytes = 2048/8
-    let mut res = [0 as u8; 256];
-    for i in 0..2048 - 64 {
-        let ind = (i as u16) / 8;
-        let shift = (i as u16) % 8;
-
-        if (i == 1584) {
-            res[ind] |= (1 << shift as u8);
-        } else {
-            res[ind] |= (msg[i] as u8 << shift as u8);
-        }
-    }
-
-    // The last 8 bytes are filled with the length of msg_bits
-    // msg_bis in bytes = [48, 6]
-    res[256-8] = 48;
-    res[256-7] = 6;
     sha256_var(res, res.len())
 }
 
@@ -137,37 +119,6 @@ fn test_compress_ec_point() {
         2, 251, 188, 92, 195, 140, 107, 160, 47, 132, 242, 112, 141, 138, 178, 59, 234, 158, 144, 47, 203, 20, 59, 174, 56, 127, 68, 229, 111, 95, 233, 172, 226
     ];
     assert(compressed_pk == expected_compressed_pk);
-}
-
-#[test]
-fn test_hashed_to_curve_msg_with_pk() {
-    let G = (get_gx(), get_gy());
-    let sk = [
-        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
-    ];
-    let pk = PointMul(sk, G);
-
-    // Change MSG_LEN to 29
-    let msg = [
-        65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103
-    ];
-
-    let mut plume_msg = [0 as u8; PLUME_MSG_LEN];
-    let pk_compress = compress_ec_point(pk);
-    for i in 0..msg.len() {
-        plume_msg[i] = msg[i];
-    }
-    for i in 0..33 {
-        plume_msg[msg.len() + i] = pk_compress[i];
-    }
-    let hashed_to_curve = HashToCurve(plume_msg);
-
-    let expected_H = ([
-        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
-    ], [
-        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
-    ]);
-    assert(hashed_to_curve == expected_H);
 }
 
 #[test]
@@ -217,6 +168,37 @@ fn test_r_point() {
 }
 
 #[test]
+fn test_hashed_to_curve_msg_with_pk() {
+    let G = (get_gx(), get_gy());
+    let sk = [
+        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
+    ];
+    let pk = PointMul(sk, G);
+
+    // Change MSG_LEN to 29
+    let msg = [
+        65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103
+    ];
+
+    let mut plume_msg = [0 as u8; PLUME_MSG_LEN];
+    let pk_compress = compress_ec_point(pk);
+    for i in 0..msg.len() {
+        plume_msg[i] = msg[i];
+    }
+    for i in 0..33 {
+        plume_msg[msg.len() + i] = pk_compress[i];
+    }
+    let hashed_to_curve = HashToCurve(plume_msg);
+
+    let expected_H = ([
+        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
+    ], [
+        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
+    ]);
+    assert(hashed_to_curve == expected_H);
+}
+
+#[test]
 fn test_hashed_to_curve_r() {
     let s = [
         202, 40, 186, 121, 96, 189, 224, 125, 45, 19, 234, 232, 99, 209, 144, 177, 95, 151, 46, 209, 51, 227, 97, 247, 229, 111, 203, 132, 125, 2, 159, 230
@@ -247,6 +229,40 @@ fn test_hashed_to_curve_r() {
 
 // Failed
 #[test]
+fn test_sha_256_12_coordinates() {
+    let hashed_to_curve = ([
+        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
+    ], [
+        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
+    ]);
+    let r_point = ([
+        4, 152, 254, 54, 199, 45, 14, 89, 41, 132, 162, 98, 41, 102, 118, 128, 129, 101, 19, 40, 42, 109, 188, 122, 210, 42, 126, 14, 53, 164, 140, 157
+    ], [
+        161, 197, 112, 118, 106, 129, 84, 144, 155, 45, 71, 18, 81, 228, 235, 188, 198, 170, 195, 217, 53, 200, 35, 70, 133, 78, 253, 138, 11, 195, 8, 255
+    ]);
+    let hashed_to_curve_r = ([
+        124, 185, 39, 205, 252, 88, 5, 39, 219, 49, 33, 21, 77, 159, 87, 105, 40, 125, 226, 84, 166, 233, 177, 165, 167, 159, 197, 99, 111, 124, 1, 109
+    ], [
+        237, 86, 172, 119, 183, 144, 226, 164, 161, 245, 202, 198, 211, 68, 63, 62, 248, 101, 138, 168, 128, 143, 74, 86, 140, 129, 153, 92, 251, 67, 108, 88
+    ]);
+
+    let sk = [
+        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
+    ];
+    let pk = PointMul(sk, (get_gx(), get_gy()));
+    let nullifier = PointMul(sk, hashed_to_curve);
+
+    let actual_c = sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
+
+    // method return bytes in reverse order
+    let expected_c = [
+        198, 167, 252, 44, 146, 109, 219, 175, 32, 115, 26, 71, 159, 182, 86, 111, 45, 170, 85, 20, 186, 174, 82, 35, 254, 59, 50, 237, 188, 232, 50, 84
+    ];
+    assert(actual_c == expected_c);
+}
+
+// Failed
+#[test]
 fn test_plume_v1() {
     // "An example app message string", 29 len
     let msg = [
@@ -269,7 +285,5 @@ fn test_plume_v1() {
 
     let pk = PointMul(sk, (get_gx(), get_gy()));
     let nullifier = PointMul(sk, H);
-
-    let actual_c = plume_v1(msg, c, s, pk, nullifier);
-    assert(actual_c == c);
+    plume_v1(msg, c, s, pk, nullifier); // assert inside method
 }

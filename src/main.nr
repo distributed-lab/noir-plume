@@ -9,10 +9,6 @@ mod iso_map;
 mod ec_ops;
 mod plume;
 
-// For testing
-use crate::ec_ops::PointMul;
-use crate::plume::{get_gx, get_gy};
-
 pub fn main(
     msg: [u8; constants::MSG_LEN],
     c: [u8; 32],
@@ -20,8 +16,5 @@ pub fn main(
     pk: [[u8; 32]; 2],
     nullifier: [[u8; 32]; 2]
 ) {
-    /*
-    let expected_c = plume::plume_v1(msg, c, s, (pk[0], pk[1]), (nullifier[0], nullifier[1]));
-    assert(expected_c == c);
-    */
+    plume::plume_v1(msg, c, s, (pk[0], pk[1]), (nullifier[0], nullifier[1]));
 }

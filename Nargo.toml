@@ -1,5 +1,5 @@
 [package]
-name = "hash_to_curve"
+name = "plume"
 type = "bin"
 authors = [""]
 compiler_version = ">=0.30.0"
