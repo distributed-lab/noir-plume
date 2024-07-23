@@ -12,9 +12,7 @@ fn get_dst_prime() -> [u8] {
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-expand_message_xmd
 pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
-    let msg_prime = MsgPrime(msg);
-
-    let b0 = sha256_var(msg_prime, msg_prime.len());
+    let b0 = MsgPrime(msg);
     let b1 = HashB(1, b0);
     let b2 = HashBi(2, b0, b1);
     let b3 = HashBi(3, b0, b2);
@@ -159,7 +157,7 @@ fn test_b3() {
     assert(b3 == expected_b3);
 }
 
-// Failed, if MSG_LEN != 3
+// Failed, if PLUME_MSG_LEN != 3
 /*
 #[test]
 fn tests_expand_message_xmd() {

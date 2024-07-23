@@ -18,8 +18,8 @@ pub fn HashToCurve<N>(msg: [u8; N]) -> Point {
 }
 
 /*
-These test cases are commented out because they depend on the MSG_LEN constant.
-If the msg.len() in test case is not equal to MSG_LEN, then it Failed
+These test cases are commented out because they depend on the PLUME_MSG_LEN constant.
+If the msg.len() in test case is not equal to PLUME_MSG_LEN, then it Failed
 */
 
 // To test a specific test, change the value of MSG_LEN to the length of the "msg" variable
