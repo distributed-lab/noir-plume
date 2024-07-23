@@ -58,3 +58,4 @@ if __name__ == "__main__":
     update_prover_toml(prover_toml_path)
 
     run_command("nargo prove")
+    run_command("nargo verify")
