@@ -1,7 +1,2 @@
-[package]
-name = "plume"
-type = "bin"
-authors = [""]
-compiler_version = ">=0.30.0"
-
-[dependencies]
+[workspace]
+members = ["crates/plume", "crates/use"]

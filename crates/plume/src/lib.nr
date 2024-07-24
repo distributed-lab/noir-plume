@@ -1,3 +1,13 @@
+mod constants;
+mod biguint;
+mod utils;
+mod hash_to_curve;
+mod hash_to_field;
+mod expand_message_xmd;
+mod map_to_curve;
+mod iso_map;
+mod ec_ops;
+
 use dep::std::bigint::Secpk1Fq;
 use dep::std::sha256::sha256_var;
 
@@ -32,13 +42,7 @@ fn rev_bytes_32(mut bytes: [u8; 32]) -> [u8; 32] {
 }
 
 // Return values - r_point, hashed_to_curve_r, hashed_to_curve
-fn check_ec_equations<N>(
-    msg: [u8; N],
-    c: [u8; 32],
-    s: [u8; 32],
-    pk: Point,
-    nullifier: Point
-) -> (Point, Point, Point) {
+fn check_ec_equations<N>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) -> (Point, Point, Point) {
     // ECDSAPrivToPub
     let s_point = PointMul(s, (get_gx(), get_gy()));
     let r_point = a_div_b_pow_c(s_point, pk, c);
