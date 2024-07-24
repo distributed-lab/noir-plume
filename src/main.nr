@@ -16,5 +16,6 @@ pub fn main(
     pk: [[u8; 32]; 2],
     nullifier: [[u8; 32]; 2]
 ) {
-    plume::plume_v1(msg, c, s, (pk[0], pk[1]), (nullifier[0], nullifier[1]));
+    // plume::plume_v1(msg, c, s, (pk[0], pk[1]), (nullifier[0], nullifier[1]));
+    plume::plume_v2(msg, c, s, (pk[0], pk[1]), (nullifier[0], nullifier[1]));
 }

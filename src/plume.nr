@@ -15,6 +15,7 @@ pub fn plume_v1<N>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier:
     assert(actual_c == c);
 }
 
+// https://www.notion.so/mantanetwork/PLUME-Discussion-6f4b7e7cf63e4e33976f6e697bf349ff
 pub fn plume_v2<N>(msg: [u8; N], c2: [u8; 32], s2: [u8; 32], pk: Point, nullifier: Point) {
     let (r_point, hashed_to_curve_r, _) = check_ec_equations(msg, c2, s2, pk, nullifier);
     let actual_c2 = rev_bytes_32(sha256_6_coordinates(nullifier, r_point, hashed_to_curve_r));
@@ -40,10 +41,7 @@ fn check_ec_equations<N>(
 ) -> (Point, Point, Point) {
     // ECDSAPrivToPub
     let s_point = PointMul(s, (get_gx(), get_gy()));
-
-    // (a / b) ^ c
     let r_point = a_div_b_pow_c(s_point, pk, c);
-    // The code above works correctly
 
     let mut plume_msg = [0; PLUME_MSG_LEN];
     let pk_compress = compress_ec_point(pk);
@@ -66,7 +64,7 @@ fn a_div_b_pow_c(a: Point, b: Point, c: [u8; 32]) -> Point {
     PointAdd(a, (b_pow_c.0, to_u8_32((ZERO - y).to_le_bytes())))
 }
 
-// With reverse
+// Apply byte reverse
 fn compress_ec_point(pk: Point) -> [u8; 33] {
     let mut compressed = [0 as u8; 33];
     compressed[0] = (pk.1[0] & 1) + 2;
@@ -112,6 +110,10 @@ fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: P
     sha256_var(res, res.len())
 }
 
+/* G in byte format:
+   Gx = 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+   Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+*/
 fn get_gx() -> [u8; 32] {
     [
         152, 23, 248, 22, 91, 129, 242, 89,
@@ -170,16 +172,14 @@ fn test_r_point() {
     let sk = [
         100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
     ];
-    let pk = PointMul(sk, G);
     let s = [
         202, 40, 186, 121, 96, 189, 224, 125, 45, 19, 234, 232, 99, 209, 144, 177, 95, 151, 46, 209, 51, 227, 97, 247, 229, 111, 203, 132, 125, 2, 159, 230
     ];
     let c = [
         84, 50, 232, 188, 237, 50, 59, 254, 35, 82, 174, 186, 20, 85, 170, 45, 111, 86, 182, 159, 71, 26, 115, 32, 175, 219, 109, 146, 44, 252, 167, 198
     ];
+    let pk = PointMul(sk, G);
     let s_point = PointMul(s, G);
-
-    // (a / b) ^ c
     let r_point = a_div_b_pow_c(s_point, pk, c);
 
     let expected_r_point = ([
@@ -310,7 +310,7 @@ fn test_plume_v1() {
 
     let pk = PointMul(sk, (get_gx(), get_gy()));
     let nullifier = PointMul(sk, H);
-    plume_v1(msg, c, s, pk, nullifier); // assert inside method
+    plume_v1(msg, c, s, pk, nullifier); // assert inside function
 }
 
 #[test]
@@ -336,5 +336,5 @@ fn test_plume_v2() {
 
     let pk = PointMul(sk, (get_gx(), get_gy()));
     let nullifier = PointMul(sk, H);
-    plume_v2(msg, c2, s2, pk, nullifier); // assert inside method
+    plume_v2(msg, c2, s2, pk, nullifier); // assert inside function
 }
