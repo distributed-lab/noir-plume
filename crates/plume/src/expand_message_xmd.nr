@@ -32,14 +32,10 @@ pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
 }
 
 fn MsgPrime<N>(msg: [u8; N]) -> [u8; 32] {
-    let z_pad = [0; 64];
     let lib_str = [0, 96];
     let mut msg_prime = [0 as u8; PLUME_MSG_LEN + 64 + 2 + 50 + 1]; // padding size
     let dst_prime = get_dst_prime();
 
-    for i in 0..64 {
-        msg_prime[i] = z_pad[i];
-    }
     for i in 0..N {
         msg_prime[64 + i] = msg[i];
     }
