@@ -32,17 +32,3 @@ def XY2Selector(x1, x2, gx1, gx2):
 
 def mod_sqrt(num):
     return num ** ((SECP256K1_PRIME + 1) // 4)
-
-    return bin_pow(FIELD(num), (FIELD(SECP256K1_PRIME) + FIELD(1)) / FIELD(4))
-
-def bin_pow(num, exp):
-    res = FIELD(1)
-    exp = int(exp)
-
-    while exp > 0:
-        if exp & 1:
-            res = res * num
-        num = num * num
-        exp >>= 1
-    return res
-

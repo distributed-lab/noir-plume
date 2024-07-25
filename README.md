@@ -1,4 +1,9 @@
 # Plume
+Plume is needed to confirm your identity without disclosing your private data, i.e. [zero-knowledge proof](https://en.wikipedia.org/wiki/Zero-knowledge_proof). Plume has another feature: you can send a message from a private group using special group message. For more details visit https://blog.aayushg.com/nullifier/
+
+## How to use?
+To use plume, you need 2 32-byte values for r and sk (secret key), and a message of arbitrary length (these values can be randomly generated). You can use the formulas described in the [plume document](https://aayushg.com/thesis.pdf) or [test.sage](tests/test.sage) to calculate the corresponding `msg`, `c`, `s`, `pk`, and `nullifier` values. After that, follow the `Build and Run` instructions to verify that the data is correct.
+
 
 ### Build and Run
 1. Install Noir by following [these instructions](https://noir-lang.org/docs/getting_started/installation/).
@@ -42,23 +47,23 @@ Steps:
 ```
 
 #### hash_to_field
-Implemented in `src/hash_to_field.nr`.  
+Implemented in [hash_to_field.nr](crates/plume/src/hash_to_field.nr).  
 Follows the algorithm described [here](https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#hashtofield).
 
 #### map_to_curve
-Implemented in `src/map_to_curve.nr`.  
+Implemented in [map_to_curve.nr](crates/plume/src/map_to_curve.nr).  
 Follows the algorithm described [here](https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#simple-swu).
 
 #### iso_map
-Implemented in `src/iso_map.nr`.  
+Implemented in [iso_map.nr](crates/plume/src/iso_map.nr).  
 Follows the algorithm described [here](https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#appx-iso-secp256k1).
 
-#### point_add
-Implemented in `src/point_add.nr`.  
+#### Elliptic Curve operations
+Implemented in [ec_ops.nr](crates/plume/src/ec_ops.nr).  
 Follows the algorithm described [here](https://www.rareskills.io/post/elliptic-curve-addition).
 
 #### BigUint
-Auxiliary library of large numbers implemented in `src/hash_to_field.nr`. Based on [this code](https://github.com/shuklaayush/noir-bigint/tree/main/crates/biguint).  
+Auxiliary library of large numbers implemented in [biguint.nr](crates/plume/src/biguint.nr). Based on [this code](https://github.com/shuklaayush/noir-bigint/tree/main/crates/biguint).  
 
 ### Constraints
 For msg of length 3:  
