@@ -41,9 +41,6 @@ pub fn mod_sqrt(num: Secpk1Fq) -> Secpk1Fq {
 
 // p is SECP256K1_PRIME, then
 // mod_mul_inv(a, p) = a ^ (p-2) % p
-pub fn mod_mul_inv(mut num: Secpk1Fq) -> Secpk1Fq {
-    bin_pow(
-        num,
-        Secpk1Fq::from_le_bytes(to_u8_arr(SECP256K1_PRIME)) - Secpk1Fq::from_le_bytes(&[2])
-    )
+pub fn mod_mul_inv(num: Secpk1Fq) -> Secpk1Fq {
+    Secpk1Fq::from_le_bytes(&[1]) / num
 }
