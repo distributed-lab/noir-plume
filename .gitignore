@@ -1,5 +1,4 @@
 proofs
 Prover.toml
 Verifier.toml
-
-*sage.py
+*.py
