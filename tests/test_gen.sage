@@ -6,21 +6,19 @@ load('constants.sage')
 load('hash_to_curve.sage')
 
 
+# Generator of secp256k1 curve
 def get_G():
     return (
         0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
         0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
     )
 
-# can generate 32 bytes num
 def generate_random_r_sk_msg():
     r = os.urandom(32)
     sk = os.urandom(32)
     msg = os.urandom(32)
     return (list(r), list(sk), list(msg))
 
-# Need to return msg, c, s, pk, nullifier
-# c == sha256(G, Pk, H, N, rG, rH)
 def plume_generate_test_case(version1):
     (r, sk, msg) = generate_random_r_sk_msg()
     r = bytes_to_num(r)
@@ -41,7 +39,7 @@ def plume_generate_test_case(version1):
         c = sha256_points([N, r*G, r*Hp])
     c.reverse()
 
-    s = (r + sk * bytes_to_num(c)) % 115792089237316195423570985008687907852837564279074904382605163141518161494337
+    s = (r + sk * bytes_to_num(c)) % SECP256K1_NUMBERS
     Pk = point_to_bytes(Pk)
     N = point_to_bytes(N)
     return (msg, c, num_to_bytes(int(s)), Pk, N)

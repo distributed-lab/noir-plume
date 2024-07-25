@@ -3,7 +3,7 @@ use crate::biguint::BigUint;
 use crate::constants::{ZERO, SECP256K1_PRIME};
 use crate::ec_ops::Point;
 use crate::utils::{
-    to_u8_arr, to_u8_32, mod_mul_inv, mod_sqrt
+    to_u8_arr, to_u8_32, mod_sqrt
 };
 
 // Constants are taken from the .circom code, converted to a little endian bytes array
@@ -53,7 +53,7 @@ pub fn MapToCurve(u: [u8; 32]) -> Point {
     let u = Secpk1Fq::from_le_bytes(to_u8_arr(u));
     let z = Secpk1Fq::from_le_bytes(get_z());
     
-    let tv1 = mod_mul_inv(z*z * u*u*u*u + z * u*u);
+    let tv1 = Secpk1Fq::from_le_bytes(&[1]) / (z*z * u*u*u*u + z * u*u);
     let a = Secpk1Fq::from_le_bytes(get_a());
     let b = Secpk1Fq::from_le_bytes(get_b());
     let x1 = ((ZERO - b) / a) * (Secpk1Fq::from_le_bytes(&[1]) + tv1);
@@ -171,7 +171,7 @@ fn test_mod_mul_inv_x1() {
         3, 35, 247, 218, 52, 195, 241, 198
     ]);
 
-    let inv_x1 = mod_mul_inv(x1);
+    let inv_x1 = Secpk1Fq::from_le_bytes(&[1]) / x1;
     let expected_inv_x1: [u8] = [
         211, 142, 221, 78, 176, 90, 13, 18,
         140, 253, 186, 38, 111, 230, 156, 220,

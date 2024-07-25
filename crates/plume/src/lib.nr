@@ -11,10 +11,10 @@ mod ec_ops;
 use dep::std::bigint::Secpk1Fq;
 use dep::std::sha256::sha256_var;
 
-use crate::utils::{to_u8_arr, to_u8_32, mod_mul_inv};
+use crate::hash_to_curve::HashToCurve;
+use crate::utils::{to_u8_arr, to_u8_32};
 use crate::constants::{ZERO, PLUME_MSG_LEN};
 use crate::ec_ops::{Point, PointMul, PointAdd};
-use crate::hash_to_curve::HashToCurve;
 
 // r*G - r_point
 // r*h - hashed_to_curve_r
