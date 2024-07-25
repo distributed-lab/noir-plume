@@ -1,21 +1,15 @@
 load('constants.sage')
+load('hash_to_field.sage')
+load('map_to_curve.sage')
+load('iso_map.sage')
 
 # Get msg in byte format
 def HashToCurve(msg):
-    # u = HashToField(msg)
-    u = ([
-        97, 43, 138, 176, 151, 243, 115, 72,
-        138, 225, 103, 71, 84, 31, 73, 62,
-        244, 209, 206, 148, 223, 59, 30, 96,
-        247, 161, 121, 54, 93, 171, 138, 18
-    ], [
-        0, 158, 104, 228, 242, 160, 170, 77,
-        4, 139, 81, 3, 106, 231, 27, 83,
-        220, 149, 200, 117, 204, 253, 208, 19,
-        168, 149, 181, 163, 93, 182, 151, 88
-    ])
+    # return bytes
+    u = HashToField(msg)
 
+    # Return field type
     q0 = MapToCurve(u[0])
-    q1 = MapTocurve(u[1])
+    q1 = MapToCurve(u[1])
 
-    return E(IsoMap(q0)) + E(IsoMap(q1))
+    return (E(IsoMap(q0)) + E(IsoMap(q1))).xy()

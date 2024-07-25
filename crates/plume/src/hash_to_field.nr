@@ -21,13 +21,19 @@ pub fn HashToField<N>(msg: [u8; N]) -> Point {
     (u0_bytes_to_registers, u1_bytes_to_registers)
 }
 
+fn try_smth(smth: [u8; 48]) -> [u8] {
+    smth
+}
+
+use crate::utils::to_u8_32;
+
 fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
-    let a = BigUint::from_bytes(get_be_bytes(ui));
+    let a = BigUint::from_bytes(reverse(ui));
     let rem = a.div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
     rem.to_bytes_32()
 }
 
-fn get_be_bytes(ui: [u8; 48]) -> [u8] {
+fn reverse(ui: [u8; 48]) -> [u8] {
     let mut res = ui;
     for i in 0..24 {
         let temp = res[i];

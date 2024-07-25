@@ -5,10 +5,12 @@ load('utils.sage')
 
 def HashToField(msg):
     ui = ExpandMessageXmd(msg)
-    return (BytesToRegisters(ui[0]), BytesToRegisters(ui[1]))
+    # Divide into two equal parts
+    return (BytesToRegisters(ui[:48]), BytesToRegisters(ui[48:]))
 
 # Do not work properly and I don't know why (in python too)
 def BytesToRegisters(ui):
+    ui.reverse()
     a = bytes_to_num(ui)
     return num_to_bytes(a % SECP256K1_PRIME)
 
@@ -47,17 +49,3 @@ def get_dst_prime():
         104, 45, 115, 101, 99, 112, 50, 53, 54, 107, 49, 95, 88, 77, 68, 58,
         83, 72, 65, 45, 50, 53, 54, 95, 83, 83, 87, 85, 95, 82, 79, 95, 49
     ]
-
-
-u0_bytes = [
-        232, 52, 124, 173, 72, 171, 78, 49, 157, 123, 39, 85, 32, 234, 129, 207,
-        18, 138, 171, 93, 54, 121, 161, 247, 96, 30, 59, 222, 172, 154, 81, 208,
-        197, 77, 255, 208, 84, 39, 78, 219, 36, 136, 85, 230, 17, 144, 196, 98
-]
-
-expected_u0_bytes = [
-        97, 43, 138, 176, 151, 243, 115, 72,
-        138, 225, 103, 71, 84, 31, 73, 62,
-        244, 209, 206, 148, 223, 59, 30, 96,
-        247, 161, 121, 54, 93, 171, 138, 18
-]

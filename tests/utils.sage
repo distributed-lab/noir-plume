@@ -1,10 +1,5 @@
-def bytes_to_num(arr, base=8):
-    base = 2**base
-    res = 0
-
-    for i in range(len(arr)):
-        res += base**i * int(arr[i])
-    return res
+def bytes_to_num(arr):
+    return int.from_bytes(bytes(arr), byteorder='little')
 
 def num_to_bytes(num):
     res = []

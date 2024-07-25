@@ -1,5 +1,5 @@
-load('utils.sage')
 load('constants.sage')
+load('utils.sage')
 
 a = FIELD(28734576633528757162648956269730739219262246272443394170905244663053633733939)
 b = FIELD(1771)
@@ -9,11 +9,11 @@ c2 = FIELD(315796607010862351155193595478239748690736321815383356471247956385205
 
 def MapToCurve(u):
     u = FIELD(bytes_to_num(u))
-    tv1 = (z*z * u*u*u*u + z*u*u) ^ (-1)  # Mod mul inv at the end
+    tv1 = FIELD((z*z * u*u*u*u + z*u*u) ^ (-1))  # Mod mul inv at the end
     x1 = (-b / a) * (FIELD(1) + tv1)
 
     gx1 = x1*x1*x1 + a*x1 + b
-    x2 = z * u*u + x1
+    x2 = z * u*u * x1
     gx2 = x2*x2*x2 + a*x2 + b
     (x, y) = XY2Selector(x1, x2, gx1, gx2)
 
@@ -25,20 +25,24 @@ def XY2Selector(x1, x2, gx1, gx2):
     gx1_sqrt = FIELD(mod_sqrt(gx1))
     gx2_sqrt = FIELD(mod_sqrt(gx2))
 
-    s1 = gx1_sqrt * gx1_sqrt == gx1
-    s2 = gx2_sqrt * gx2_sqrt == gx2
+    s1 = (gx1_sqrt * gx1_sqrt) == gx1
+    s2 = (gx2_sqrt * gx2_sqrt) == gx2
     assert(s1 != s2)
     return (x1, gx1_sqrt) if s1 else (x2, gx2_sqrt)
 
 def mod_sqrt(num):
-    return bin_pow(num, (SECP256K1_PRIME+1) // 4)
+    return num ** ((SECP256K1_PRIME + 1) // 4)
+
+    return bin_pow(FIELD(num), (FIELD(SECP256K1_PRIME) + FIELD(1)) / FIELD(4))
 
 def bin_pow(num, exp):
-    res = 1
+    res = FIELD(1)
+    exp = int(exp)
+
     while exp > 0:
         if exp & 1:
-            res = (res * num) % SECP256K1_PRIME
-        num = (num * num) % SECP256K1_PRIME
+            res = res * num
+        num = num * num
         exp >>= 1
     return res
 
