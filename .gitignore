@@ -1,4 +1,6 @@
 proofs
+target
+
 Prover.toml
 Verifier.toml
 *.py

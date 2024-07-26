@@ -92,7 +92,7 @@ fn sha256_6_coordinates(nullifier: Point, gr: Point, hr: Point) -> [u8; 32] {
             res[i*33 + j] = compressed[i][j];
         }
     }
-    sha256_var(res, res.len())
+    sha256_var(res, res.len() as u64)
 }
 
 fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: Point) -> [u8; 32] {
@@ -111,7 +111,7 @@ fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: P
             res[i*33 + j] = compressed[i][j];
         }
     }
-    sha256_var(res, res.len())
+    sha256_var(res, res.len() as u64)
 }
 
 /* G in byte format:

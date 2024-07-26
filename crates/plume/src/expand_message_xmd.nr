@@ -48,7 +48,7 @@ fn MsgPrime<N>(msg: [u8; N]) -> [u8; 32] {
     for i in 0..dst_prime.len() {
         msg_prime[64 + N + 2 + 1 + i] = dst_prime[i];
     }
-    sha256_var(msg_prime, msg_prime.len())
+    sha256_var(msg_prime, msg_prime.len() as u64)
 }
 
 fn HashB(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
@@ -64,7 +64,7 @@ fn HashB(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
     for i in 0..dst_prime.len() {
         res[32 + 1 + i] = dst_prime[i];
     }
-    sha256_var(res, res.len())
+    sha256_var(res, res.len() as u64)
 }
 
 fn HashBi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {

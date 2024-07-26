@@ -7,7 +7,7 @@ load('test_gen.sage')
 def run_command(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     if result.stdout:
-        print(result.stdout)
+        print(result.stdout, end='')
     
     if result.returncode != 0:
         if result.stderr:

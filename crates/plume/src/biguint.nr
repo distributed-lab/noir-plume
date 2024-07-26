@@ -48,7 +48,7 @@ impl BigUint {
     }
 
     pub fn from_bytes(bytes: [u8]) -> Self {
-        assert(bytes.len() <= NUM_BYTES as u64);
+        assert(bytes.len() as u64 <= NUM_BYTES);
         
         let mut res = BigUint::zero();
         for i in 0..bytes.len() {
