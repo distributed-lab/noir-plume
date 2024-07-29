@@ -43,7 +43,6 @@ fn reverse(ui: [u8; 48]) -> [u8] {
     res
 }
 
-
 #[test]
 fn test_u0_bytes_to_registers() {
     let u0_bytes = [
