@@ -18,16 +18,14 @@ To use plume, you need 2 32-byte values for r and sk (secret key), and a message
 
 
 ### Constraints
-For plume_v1 and msg of length 29:  
+For plume_v1 and msg of length 32:  
 ```
-ACIR Opcodes: 4556085
-Backend Circuit Size: 17125141
+ACIR Opcodes: 3354618
 ```
 
-For plume_v2 and msg of length 29:
+For plume_v2 and msg of length 32:
 ```
-ACIR Opcodes: 4555884
-Backend Circuit Size: 17117111
+ACIR Opcodes: 3354410
 ```
 
 ## secp256k1_XMD:SHA-256_SSWU_RO_ hash-to-curve in Noir
@@ -73,6 +71,5 @@ Auxiliary library of large numbers implemented in [biguint.nr](crates/plume/src/
 ### Constraints
 For msg of length 3:  
 ```
-ACIR Opcodes: 1615724  
-Backend Circuit Size: 3786276
+ACIR Opcodes: 351063
 ```
