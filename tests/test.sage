@@ -50,5 +50,8 @@ if __name__ == "__main__":
     is_v1 = len(sys.argv) == 1 or sys.argv[1] == "v1"
     update_prover_toml(prover_toml_path, is_v1)
 
-    run_command("nargo prove")
-    run_command("nargo verify")
+    run_command('nargo execute plume')
+    run_command('bb prove -b ../target/use.json -w ../target/plume.gz -o ../target/proof')
+    
+    run_command('bb write_vk -b ../target/use.json -o ../target/vk')
+    run_command('bb verify -k ../target/vk -p ../target/proof')

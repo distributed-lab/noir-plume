@@ -1,5 +1,4 @@
 mod constants;
-mod biguint;
 mod utils;
 mod hash_to_curve;
 mod hash_to_field;

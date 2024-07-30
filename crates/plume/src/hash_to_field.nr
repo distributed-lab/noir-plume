@@ -1,7 +1,6 @@
 use dep::std::bigint::Secpk1Fq;
 use crate::expand_message_xmd::ExpandMessageXmd;
 use crate::constants::SECP256K1_PRIME;
-use crate::biguint::BigUint;
 use crate::ec_ops::Point;
 use crate::utils::{to_u8_arr, to_u8_32};
 
