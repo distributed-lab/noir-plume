@@ -2,7 +2,7 @@ use dep::std::bigint::Secpk1Fq;
 use crate::constants::SECP256K1_PRIME;
 
 // helper methods for convenient Secpk1Fq conversion
-pub fn to_u8_arr(smth: [u8; 32]) -> [u8] {
+pub fn to_u8_arr<N>(smth: [u8; N]) -> [u8] {
     smth
 }
 

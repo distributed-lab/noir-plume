@@ -2,6 +2,6 @@
 name = "plume"
 type = "lib"
 authors = [""]
-compiler_version = ">=0.30.0"
+compiler_version = ">=0.31.0"
 
 [dependencies]

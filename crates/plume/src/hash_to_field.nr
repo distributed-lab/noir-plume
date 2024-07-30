@@ -3,6 +3,7 @@ use crate::expand_message_xmd::ExpandMessageXmd;
 use crate::constants::SECP256K1_PRIME;
 use crate::biguint::BigUint;
 use crate::ec_ops::Point;
+use crate::utils::{to_u8_arr, to_u8_32};
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
 pub fn HashToField<N>(msg: [u8; N]) -> Point {
@@ -21,16 +22,24 @@ pub fn HashToField<N>(msg: [u8; N]) -> Point {
     (u0_bytes_to_registers, u1_bytes_to_registers)
 }
 
-fn try_smth(smth: [u8; 48]) -> [u8] {
-    smth
-}
-
-use crate::utils::to_u8_32;
-
 fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
-    let a: BigUint<12> = BigUint::from_bytes(reverse(ui));
-    let rem = a.div(BigUint::from_bytes_32(SECP256K1_PRIME)).1;
-    rem.to_bytes_32()
+    let ui = reverse(ui);
+
+    // 2^128
+    let temp = Secpk1Fq::from_le_bytes(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    let mut small = [0 as u8; 16];
+    let mut big = [0 as u8; 32];
+
+    for i in 0..16 {
+        small[i] = ui[i];
+    }
+    for i in 0..32 {
+        big[i] = ui[i+16];
+    }
+
+    let mut res = Secpk1Fq::from_le_bytes(to_u8_arr(big));
+    res = res * temp + Secpk1Fq::from_le_bytes(to_u8_arr(small));
+    to_u8_32(res.to_le_bytes())
 }
 
 fn reverse(ui: [u8; 48]) -> [u8] {
