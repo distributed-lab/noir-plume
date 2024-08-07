@@ -1,7 +1,9 @@
 [package]
 name = "plume"
 type = "lib"
-authors = [""]
+authors = ["Distributed Lab"]
+license = "MIT"
+description = "PLUME implementation in Noir."
 compiler_version = ">=0.31.0"
 
 [dependencies]

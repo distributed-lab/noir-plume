@@ -1,7 +1,9 @@
 [package]
 name = "use"
 type = "bin"
-authors = [""]
+authors = ["Distributed Lab"]
+license = "MIT"
+description = "PLUME usage in Noir."
 compiler_version = ">=0.31.0"
 
 [dependencies]

@@ -1,11 +1,15 @@
-# Plume
-Plume is needed to confirm your identity without disclosing your private data, i.e. [zero-knowledge proof](https://en.wikipedia.org/wiki/Zero-knowledge_proof). Plume has another feature: you can send a message from a private group using special group message. For more details visit https://blog.aayushg.com/nullifier/
+# Plume in Noir
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Nargo Test 🌌](https://github.com/distributed-lab/noir-plume/actions/workflows/test.yml/badge.svg)](https://github.com/distributed-lab/noir-plume/actions/workflows/test.yml)
+
+Plume is needed to confirm your identity without disclosing your private data, i.e. [zero-knowledge proof](https://en.wikipedia.org/wiki/Zero-knowledge_proof). Plume has another feature: you can send a message from a private group using special group message. For more details visit <https://blog.aayushg.com/nullifier/>.
 
 ## How to use?
-To use plume, you need 2 32-byte values for r and sk (secret key), and a message of arbitrary length (these values can be randomly generated). You can use the formulas described in the [plume document](https://aayushg.com/thesis.pdf) or [test.sage](tests/test.sage) to calculate the corresponding `msg`, `c`, `s`, `pk`, and `nullifier` values. After that, follow the `Build and Run` instructions to verify that the data is correct.
 
+To use plume, you need two 32-byte values for r and sk (secret key), and a message of arbitrary length (these values can be randomly generated). You can use the formulas described in the [plume document](https://aayushg.com/thesis.pdf) or [test.sage](tests/test.sage) to calculate the corresponding `msg`, `c`, `s`, `pk`, and `nullifier` values. After that, follow the `Build and Run` instructions to verify that the data is correct.
 
 ### Build and Run
+
 1. Install Noir by following [these instructions](https://noir-lang.org/docs/getting_started/installation/).
 2. Install Barretenberg by following [these instructions](https://noir-lang.org/docs/getting_started/backend/).
 3. Change [MSG_LEN](src/constants.nr) constant to the length of the message you want to pass to the program.
@@ -16,26 +20,23 @@ To use plume, you need 2 32-byte values for r and sk (secret key), and a message
 8. Compute verification key with command: `bb write_vk -b ./target/use.json -o ./target/vk`.
 9. Verify proof with command: `bb verify -k ./target/vk -o ./target/proof`
 
-
 ### Constraints
-For plume_v1 and msg of length 32:  
-```
-ACIR Opcodes: 3354618
-```
 
-For plume_v2 and msg of length 32:
-```
-ACIR Opcodes: 3354410
-```
+| Version   | Message Length | ACIR Opcodes |
+|-----------|----------------|--------------|
+| plume_v1  | 32             | 3354618      |
+| plume_v2  | 32             | 3354410      |
 
 ## secp256k1_XMD:SHA-256_SSWU_RO_ hash-to-curve in Noir
 
 ### Quick overview
+
 Implementation of the hash-to-curve algorithm based on [this description](https://datatracker.ietf.org/doc/id/draft-irtf-cfrg-hash-to-curve-06.html).  
 Checked with the test described [here](https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#appendix-J.8.1).
 
 ### The algorithm
-```
+
+```bash
 hash_to_curve(msg)
 
 Input: msg, an arbitrary-length byte string.
@@ -50,26 +51,21 @@ Steps:
 ```
 
 #### hash_to_field
+
 Implemented in [hash_to_field.nr](crates/plume/src/hash_to_field.nr).  
 Follows the algorithm described [here](https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#hashtofield).
 
 #### map_to_curve
+
 Implemented in [map_to_curve.nr](crates/plume/src/map_to_curve.nr).  
 Follows the algorithm described [here](https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#simple-swu).
 
 #### iso_map
+
 Implemented in [iso_map.nr](crates/plume/src/iso_map.nr).  
 Follows the algorithm described [here](https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#appx-iso-secp256k1).
 
 #### Elliptic Curve operations
+
 Implemented in [ec_ops.nr](crates/plume/src/ec_ops.nr).  
 Follows the algorithm described [here](https://www.rareskills.io/post/elliptic-curve-addition).
-
-#### BigUint
-Auxiliary library of large numbers implemented in [biguint.nr](crates/plume/src/biguint.nr). Based on [this code](https://github.com/shuklaayush/noir-bigint/tree/main/crates/biguint).  
-
-### Constraints
-For msg of length 3:  
-```
-ACIR Opcodes: 351063
-```
