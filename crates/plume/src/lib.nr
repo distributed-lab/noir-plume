@@ -18,14 +18,14 @@ use crate::ec_ops::{Point, PointMul, PointAdd};
 // r*G - r_point
 // r*h - hashed_to_curve_r
 // sha256(G || Pk || H || N || r*G || r*H)
-pub fn plume_v1<N>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) {
+pub fn plume_v1<let N: u32>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) {
     let (r_point, hashed_to_curve_r, hashed_to_curve) = check_ec_equations(msg, c, s, pk, nullifier);
     let actual_c = rev_bytes_32(sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r));
     assert(actual_c == c);
 }
 
 // https://www.notion.so/mantanetwork/PLUME-Discussion-6f4b7e7cf63e4e33976f6e697bf349ff
-pub fn plume_v2<N>(msg: [u8; N], c2: [u8; 32], s2: [u8; 32], pk: Point, nullifier: Point) {
+pub fn plume_v2<let N: u32>(msg: [u8; N], c2: [u8; 32], s2: [u8; 32], pk: Point, nullifier: Point) {
     let (r_point, hashed_to_curve_r, _) = check_ec_equations(msg, c2, s2, pk, nullifier);
     let actual_c2 = rev_bytes_32(sha256_6_coordinates(nullifier, r_point, hashed_to_curve_r));
     assert(actual_c2 == c2);
@@ -41,7 +41,7 @@ fn rev_bytes_32(mut bytes: [u8; 32]) -> [u8; 32] {
 }
 
 // Return values - r_point, hashed_to_curve_r, hashed_to_curve
-fn check_ec_equations<N>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) -> (Point, Point, Point) {
+fn check_ec_equations<let N: u32>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) -> (Point, Point, Point) {
     // ECDSAPrivToPub
     let s_point = PointMul(s, (get_gx(), get_gy()));
     let r_point = a_div_b_pow_c(s_point, pk, c);

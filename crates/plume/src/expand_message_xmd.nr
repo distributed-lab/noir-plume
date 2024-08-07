@@ -11,7 +11,7 @@ fn get_dst_prime() -> [u8] {
 }
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-expand_message_xmd
-pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
+pub fn ExpandMessageXmd<let N: u32>(msg: [u8; N]) -> [u8; 96] {
     let b0 = MsgPrime(msg);
     let b1 = HashB(1, b0);
     let b2 = HashBi(2, b0, b1);
@@ -31,7 +31,7 @@ pub fn ExpandMessageXmd<N>(msg: [u8; N]) -> [u8; 96] {
     out
 }
 
-fn MsgPrime<N>(msg: [u8; N]) -> [u8; 32] {
+fn MsgPrime<let N: u32>(msg: [u8; N]) -> [u8; 32] {
     let lib_str = [0, 96];
     let mut msg_prime = [0 as u8; PLUME_MSG_LEN + 64 + 2 + 50 + 1]; // padding size
     let dst_prime = get_dst_prime();
