@@ -1,4 +1,4 @@
-use dep::std::bigint::Secpk1Fq;
+use std::bigint::Secpk1Fq;
 use crate::constants::SECP256K1_PRIME;
 
 // helper methods for convenient Secpk1Fq conversion

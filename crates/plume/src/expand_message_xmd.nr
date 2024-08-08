@@ -1,5 +1,4 @@
-// Expand Message Xmd
-use dep::std::sha256::sha256_var;
+use std::sha256::sha256_var;
 use crate::constants::PLUME_MSG_LEN;
 
 fn get_dst_prime() -> [u8] {

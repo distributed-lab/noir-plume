@@ -1,4 +1,4 @@
-use dep::std::bigint::Secpk1Fq;
+use std::bigint::Secpk1Fq;
 use crate::expand_message_xmd::ExpandMessageXmd;
 use crate::constants::SECP256K1_PRIME;
 use crate::ec_ops::Point;

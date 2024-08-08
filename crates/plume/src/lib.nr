@@ -7,8 +7,8 @@ mod map_to_curve;
 mod iso_map;
 mod ec_ops;
 
-use dep::std::bigint::Secpk1Fq;
-use dep::std::sha256::sha256_var;
+use std::bigint::Secpk1Fq;
+use std::sha256::sha256_var;
 
 use crate::hash_to_curve::HashToCurve;
 use crate::utils::{to_u8_arr, to_u8_32};

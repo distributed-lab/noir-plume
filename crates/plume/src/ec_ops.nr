@@ -1,4 +1,4 @@
-use dep::std::bigint::Secpk1Fq;
+use std::bigint::Secpk1Fq;
 use crate::constants::ZERO;
 use crate::utils::{to_u8_arr, to_u8_32};
 
@@ -28,9 +28,8 @@ fn point_add(x0: Secpk1Fq, y0: Secpk1Fq, x1: Secpk1Fq, y1: Secpk1Fq) -> (Secpk1F
 fn double_point(x: Secpk1Fq, y: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
     let two = Secpk1Fq::from_le_bytes(&[2]);
     let three = Secpk1Fq::from_le_bytes(&[3]);
-    let a = ZERO;
 
-    let lambda = (three * x * x + a) / (two * y);
+    let lambda = (three * x * x) / (two * y);
     let x3 = lambda * lambda - two * x;
     let y3 = lambda * (x - x3) - y;
     (x3, y3)

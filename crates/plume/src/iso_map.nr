@@ -1,4 +1,4 @@
-use dep::std::bigint::Secpk1Fq;
+use std::bigint::Secpk1Fq;
 use crate::constants::SECP256K1_PRIME;
 use crate::ec_ops::Point;
 use crate::utils::{to_u8_arr, to_u8_32};
