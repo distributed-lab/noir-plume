@@ -24,8 +24,8 @@ To use plume, you need two 32-byte values for r and sk (secret key), and a messa
 
 | Version   | Message Length | ACIR Opcodes |
 |-----------|----------------|--------------|
-| plume_v1  | 32             | 3354618      |
-| plume_v2  | 32             | 3354410      |
+| plume_v1  | 32             | 3072069      |
+| plume_v2  | 32             | 3071867      |
 
 ## secp256k1_XMD:SHA-256_SSWU_RO_ hash-to-curve in Noir
 
