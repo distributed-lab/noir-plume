@@ -1,12 +1,10 @@
 use std::bigint::Secpk1Fq;
 use crate::constants::SECP256K1_PRIME;
 use crate::ec_ops::Point;
-use crate::utils::{to_u8_arr, to_u8_32};
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-3-isogeny-map-for-secp256k1
 pub fn IsoMap(p: Point) -> Point {
-    let x = Secpk1Fq::from_le_bytes(to_u8_arr(p.0));
-    let y = Secpk1Fq::from_le_bytes(to_u8_arr(p.1));
+    let (x, y) = p;
 
     // Step 1. Calculate x^2
     // Step 2. Calculate x^3
@@ -18,9 +16,9 @@ pub fn IsoMap(p: Point) -> Point {
     let y_num = YNum(x, x_2, x_3);
     let y_den = YDen(x, x_2, x_3);
 
-    let x = (x_num / x_den).to_le_bytes();
-    let y = (y * y_num / y_den).to_le_bytes();
-    (to_u8_32(x), to_u8_32(y))
+    let x = (x_num / x_den);
+    let y = (y * y_num / y_den);
+    (x, y)
 }
 
 /*
@@ -77,31 +75,39 @@ fn YDen(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
 
 #[test]
 fn test_IsoMap() {
-    let p = ([
+    let p = (Secpk1Fq::from_le_bytes(
+            &[
         234, 37, 9, 54, 187, 229, 107, 235,
         237, 49, 196, 35, 95, 174, 247, 160,
         85, 100, 3, 87, 65, 16, 136, 148,
         106, 65, 146, 45, 83, 206, 236, 141
-    ], [
+    ]
+        ), Secpk1Fq::from_le_bytes(
+            &[
         74, 218, 165, 198, 134, 228, 97, 243,
         190, 229, 69, 77, 46, 210, 19, 124,
         166, 44, 107, 238, 93, 62, 19, 74,
         189, 71, 104, 50, 28, 174, 73, 226
-    ]);
+    ]
+        ));
 
     let actual_p = IsoMap(p);
 
-    let expected_p = ([
+    let expected_p = (Secpk1Fq::from_le_bytes(
+            &[
         248, 159, 226, 176, 248, 57, 16, 215,
         154, 253, 32, 122, 148, 42, 124, 230,
         67, 118, 80, 123, 130, 94, 244, 92,
         254, 0, 94, 26, 38, 109, 157, 248
-    ], [
+    ]
+        ), Secpk1Fq::from_le_bytes(
+            &[
         87, 175, 108, 128, 252, 207, 29, 238,
         28, 188, 99, 213, 54, 233, 28, 203,
         170, 177, 172, 195, 198, 145, 173, 110,
         23, 169, 52, 204, 224, 85, 56, 179
-    ]);
+    ]
+        ));
     assert(actual_p == expected_p);
 }
 

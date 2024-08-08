@@ -2,7 +2,7 @@ use std::bigint::Secpk1Fq;
 use crate::expand_message_xmd::ExpandMessageXmd;
 use crate::constants::SECP256K1_PRIME;
 use crate::ec_ops::Point;
-use crate::utils::{to_u8_arr, to_u8_32};
+use crate::utils::{rev_bytes_48, to_u8_arr};
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
 pub fn HashToField<let N: u32>(msg: [u8; N]) -> Point {
@@ -21,8 +21,8 @@ pub fn HashToField<let N: u32>(msg: [u8; N]) -> Point {
     (u0_bytes_to_registers, u1_bytes_to_registers)
 }
 
-fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
-    let ui = reverse(ui);
+fn BytesToRegisters(ui: [u8; 48]) -> Secpk1Fq {
+    let ui = rev_bytes_48(ui);
 
     // 2^128
     let temp = Secpk1Fq::from_le_bytes(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
@@ -37,18 +37,7 @@ fn BytesToRegisters(ui: [u8; 48]) -> [u8; 32] {
     }
 
     let mut res = Secpk1Fq::from_le_bytes(to_u8_arr(big));
-    res = res * temp + Secpk1Fq::from_le_bytes(to_u8_arr(small));
-    to_u8_32(res.to_le_bytes())
-}
-
-fn reverse(ui: [u8; 48]) -> [u8] {
-    let mut res = ui;
-    for i in 0..24 {
-        let temp = res[i];
-        res[i] = res[47-i];
-        res[47-i] = temp;
-    }
-    res
+    res * temp + Secpk1Fq::from_le_bytes(to_u8_arr(small))
 }
 
 #[test]
@@ -60,12 +49,14 @@ fn test_u0_bytes_to_registers() {
     ];
 
     let u0_bytes_to_registers = BytesToRegisters(u0_bytes);
-    let expected_u0_bytes_to_registers = [
+    let expected_u0_bytes_to_registers = Secpk1Fq::from_le_bytes(
+        &[
         97, 43, 138, 176, 151, 243, 115, 72,
         138, 225, 103, 71, 84, 31, 73, 62,
         244, 209, 206, 148, 223, 59, 30, 96,
         247, 161, 121, 54, 93, 171, 138, 18
-    ];
+    ]
+    );
     assert(u0_bytes_to_registers == expected_u0_bytes_to_registers);
 }
 
@@ -78,11 +69,13 @@ fn test_u1_bytes_to_registers() {
     ];
 
     let u1_bytes_to_registers = BytesToRegisters(u1_bytes);
-    let expected_u1_bytes_to_registers = [
+    let expected_u1_bytes_to_registers = Secpk1Fq::from_le_bytes(
+        &[
         0, 158, 104, 228, 242, 160, 170, 77,
         4, 139, 81, 3, 106, 231, 27, 83,
         220, 149, 200, 117, 204, 253, 208, 19,
         168, 149, 181, 163, 93, 182, 151, 88
-    ];
+    ]
+    );
     assert(u1_bytes_to_registers == expected_u1_bytes_to_registers);
 }

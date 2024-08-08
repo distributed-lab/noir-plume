@@ -1,7 +1,7 @@
 use std::bigint::Secpk1Fq;
-use crate::constants::{ZERO, SECP256K1_PRIME};
 use crate::ec_ops::Point;
-use crate::utils::{to_u8_arr, to_u8_32, mod_sqrt};
+use crate::utils::mod_sqrt;
+use crate::constants::{ZERO, ONE, SECP256K1_PRIME};
 
 // Constants are taken from the .circom code, converted to a little endian bytes array
 // https://github.com/geometryxyz/secp256k1_hash_to_curve/blob/main/circuits/circom/constants.circom
@@ -46,14 +46,13 @@ fn get_b() -> [u8] {
 }
 
 // Formula from https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-simplified-shallue-van-de-w
-pub fn MapToCurve(u: [u8; 32]) -> Point {
-    let u = Secpk1Fq::from_le_bytes(to_u8_arr(u));
+pub fn MapToCurve(u: Secpk1Fq) -> Point {
     let z = Secpk1Fq::from_le_bytes(get_z());
 
     let tv1 = Secpk1Fq::from_le_bytes(&[1]) / (z * z * u * u * u * u + z * u * u);
     let a = Secpk1Fq::from_le_bytes(get_a());
     let b = Secpk1Fq::from_le_bytes(get_b());
-    let x1 = ((ZERO - b) / a) * (Secpk1Fq::from_le_bytes(&[1]) + tv1);
+    let x1 = ((ZERO - b) / a) * (ONE + tv1);
 
     let gx1 = x1 * x1 * x1 + a * x1 + b;
     let x2 = z * u * u * x1;
@@ -64,7 +63,7 @@ pub fn MapToCurve(u: [u8; 32]) -> Point {
     let right_sgn = (y.to_le_bytes()[0] as Field).to_le_bits(8)[0];
 
     let y = if left_sgn == right_sgn { y } else { ZERO - y };
-    (to_u8_32(x.to_le_bytes()), to_u8_32(y.to_le_bytes()))
+    (x, y)
 }
 
 fn XY2Selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
@@ -79,84 +78,7 @@ fn XY2Selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Sec
 }
 
 #[test]
-fn test_tv1() {
-    // tv1 = (Z * u^2) % p 
-    let u = [
-        97, 43, 138, 176, 151, 243, 115, 72,
-        138, 225, 103, 71, 84, 31, 73, 62,
-        244, 209, 206, 148, 223, 59, 30, 96,
-        247, 161, 121, 54, 93, 171, 138, 18
-    ];
-
-    let big_u0 = Secpk1Fq::from_le_bytes(to_u8_arr(u));
-    let big_z = Secpk1Fq::from_le_bytes(get_z());
-
-    let tv1 = big_z * big_u0 * big_u0;
-
-    let expected_tv1: [u8] = [
-        184, 23, 27, 73, 61, 77, 100, 6,
-        75, 213, 150, 133, 73, 150, 175, 173,
-        67, 248, 62, 55, 61, 21, 80, 247,
-        40, 1, 228, 234, 119, 216, 29, 46
-    ];
-    assert(tv1.to_le_bytes() == expected_tv1);
-}
-
-#[test]
-fn test_tv2() {
-    // tv2 = tv1^2 % p
-    let tv1 = Secpk1Fq::from_le_bytes(
-        &[
-        184, 23, 27, 73, 61, 77, 100, 6,
-        75, 213, 150, 133, 73, 150, 175, 173,
-        67, 248, 62, 55, 61, 21, 80, 247,
-        40, 1, 228, 234, 119, 216, 29, 46
-    ]
-    );
-    let tv2 = tv1 * tv1;
-
-    let expected_tv2: [u8] = [
-        156, 107, 5, 192, 90, 40, 223, 212,
-        130, 84, 167, 237, 236, 226, 136, 183,
-        80, 34, 225, 160, 109, 225, 215, 3,
-        219, 33, 19, 240, 188, 234, 211, 152
-    ];
-    assert(tv2.to_le_bytes() == expected_tv2);
-}
-
-#[test]
-fn test_tv1_add_tv2() {
-    // x1 = (tv1 + tv2) % p
-    let tv1 = Secpk1Fq::from_le_bytes(
-        &[
-        184, 23, 27, 73, 61, 77, 100, 6,
-        75, 213, 150, 133, 73, 150, 175, 173,
-        67, 248, 62, 55, 61, 21, 80, 247,
-        40, 1, 228, 234, 119, 216, 29, 46
-    ]
-    );
-    let tv2 = Secpk1Fq::from_le_bytes(
-        &[
-        156, 107, 5, 192, 90, 40, 223, 212,
-        130, 84, 167, 237, 236, 226, 136, 183,
-        80, 34, 225, 160, 109, 225, 215, 3,
-        219, 33, 19, 240, 188, 234, 211, 152
-    ]
-    );
-
-    let x1 = tv1 + tv2;
-    let expected_x1: [u8] = [
-        84, 131, 32, 9, 152, 117, 67, 219,
-        205, 41, 62, 115, 54, 121, 56, 101,
-        148, 26, 32, 216, 170, 246, 39, 251,
-        3, 35, 247, 218, 52, 195, 241, 198
-    ];
-    assert(x1.to_le_bytes() == expected_x1);
-}
-
-#[test]
 fn test_mod_mul_inv_x1() {
-    // mod_mul_inv(x1)
     let x1 = Secpk1Fq::from_le_bytes(
         &[
         84, 131, 32, 9, 152, 117, 67, 219,
@@ -203,27 +125,33 @@ fn test_XY2Selector_2() {
 
 #[test]
 fn test_MapToCurve() {
-    let u0_bytes = [
+    let u0_bytes = Secpk1Fq::from_le_bytes(
+        &[
         97, 43, 138, 176, 151, 243, 115, 72,
         138, 225, 103, 71, 84, 31, 73, 62,
         244, 209, 206, 148, 223, 59, 30, 96,
         247, 161, 121, 54, 93, 171, 138, 18
-    ];
+    ]
+    );
 
     let (x, y) = MapToCurve(u0_bytes);
 
-    let expected_x = [
+    let expected_x = Secpk1Fq::from_le_bytes(
+        &[
         181, 145, 157, 194, 47, 137, 194, 182,
         137, 175, 255, 248, 220, 155, 21, 208,
         170, 147, 24, 158, 1, 255, 122, 7,
         138, 168, 206, 231, 17, 190, 219, 242
-    ];
-    let expected_y = [
+    ]
+    );
+    let expected_y = Secpk1Fq::from_le_bytes(
+        &[
         229, 169, 131, 251, 47, 167, 25, 23,
         58, 145, 104, 47, 28, 167, 183, 142,
         222, 47, 130, 14, 237, 125, 44, 130,
         236, 154, 191, 129, 133, 161, 34, 59
-    ];
+    ]
+    );
 
     assert(x == expected_x);
     assert(y == expected_y);
