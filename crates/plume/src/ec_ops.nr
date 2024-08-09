@@ -22,7 +22,8 @@ fn point_add(x0: Secpk1Fq, y0: Secpk1Fq, x1: Secpk1Fq, y1: Secpk1Fq) -> (Secpk1F
     (x2, y2)
 }
 
-fn double_point(x: Secpk1Fq, y: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
+fn DoublePoint(p: Point) -> Point {
+    let (x, y) = p;
     let two = Secpk1Fq::from_le_bytes(&[2]);
     let three = Secpk1Fq::from_le_bytes(&[3]);
 
@@ -38,18 +39,16 @@ pub fn PointMul(scalar: [u8; 32], mut p: Point) -> Point {
     let mut first_add = true;
 
     for i in 0..32 {
-        let byte = (scalar[i] as Field).to_le_bits(8);
-
         for j in 0..8 {
-            if byte[j] == 1 {
+            if scalar[i] & (1 << j) != 0 {
                 if first_add {
                     res = p;
                     first_add = false;
                 } else {
-                    res = point_add(res.0, res.1, p.0, p.1);
+                    res = PointAdd(res, p);
                 }
             }
-            p = double_point(p.0, p.1);
+            p = DoublePoint(p);
         }
     }
     res
@@ -119,9 +118,8 @@ fn test_double_point() {
         110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
     ]
         ));
-    let (p0, p1) = p;
 
-    let actual_p = double_point(p0, p1);
+    let actual_p = DoublePoint(p);
     let res_x = Secpk1Fq::from_le_bytes(
         &[
         205, 200, 174, 0, 106, 168, 219, 224, 33, 247, 220, 167, 239, 208, 216, 160, 32, 65, 227, 240, 29, 168, 227, 231, 209, 129, 235, 8, 128, 104, 203, 158
