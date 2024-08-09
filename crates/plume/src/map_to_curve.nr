@@ -45,8 +45,19 @@ fn get_b() -> [u8] {
     [235, 6]
 }
 
+fn xy2_selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
+    let gx1_sqrt = mod_sqrt(gx1);
+    let gx2_sqrt = mod_sqrt(gx2);
+
+    let s1 = gx1_sqrt * gx1_sqrt == gx1;
+    let s2 = gx2_sqrt * gx2_sqrt == gx2;
+    assert(s1 ^ s2);
+
+    if s1 { (x1, gx1_sqrt) } else { (x2, gx2_sqrt) }
+}
+
 // Formula from https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-simplified-shallue-van-de-w
-pub fn MapToCurve(u: Secpk1Fq) -> Point {
+pub fn map_to_curve(u: Secpk1Fq) -> Point {
     let z = Secpk1Fq::from_le_bytes(get_z());
 
     let tv1 = Secpk1Fq::from_le_bytes(&[1]) / (z * z * u * u * u * u + z * u * u);
@@ -57,24 +68,13 @@ pub fn MapToCurve(u: Secpk1Fq) -> Point {
     let gx1 = x1 * x1 * x1 + a * x1 + b;
     let x2 = z * u * u * x1;
     let gx2 = x2 * x2 * x2 + a * x2 + b;
-    let (x, y) = XY2Selector(x1, x2, gx1, gx2);
+    let (x, y) = xy2_selector(x1, x2, gx1, gx2);
 
     let left_sgn  = (u.to_le_bytes()[0] as Field).to_le_bits(8)[0];
     let right_sgn = (y.to_le_bytes()[0] as Field).to_le_bits(8)[0];
 
     let y = if left_sgn == right_sgn { y } else { ZERO - y };
     (x, y)
-}
-
-fn XY2Selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
-    let gx1_sqrt = mod_sqrt(gx1);
-    let gx2_sqrt = mod_sqrt(gx2);
-
-    let s1 = gx1_sqrt * gx1_sqrt == gx1;
-    let s2 = gx2_sqrt * gx2_sqrt == gx2;
-    assert(s1 ^ s2);
-
-    if s1 { (x1, gx1_sqrt) } else { (x2, gx2_sqrt) }
 }
 
 #[test]
@@ -98,33 +98,32 @@ fn test_mod_mul_inv_x1() {
     assert(inv_x1.to_le_bytes() == expected_inv_x1);
 }
 
-// More XY2Selector test, for understand mod_sqrt
 #[test]
-fn test_XY2Selector_1() {
+fn test_xy2_selector_1() {
     let x1 = Secpk1Fq::from_le_bytes(&[123]);
     let x2 = Secpk1Fq::from_le_bytes(&[200, 1]);
     let gx1 = Secpk1Fq::from_le_bytes(&[4]);
     let gx2 = Secpk1Fq::from_le_bytes(&[5]);
 
-    let (actual_x, actual_gx) = XY2Selector(x1, x2, gx1, gx2);
+    let (actual_x, actual_gx) = xy2_selector(x1, x2, gx1, gx2);
     assert(actual_x == x1);
     assert(actual_gx == Secpk1Fq::from_le_bytes(&[2]));
 }
 
 #[test]
-fn test_XY2Selector_2() {
+fn test_xy2_selector_2() {
     let x1 = Secpk1Fq::from_le_bytes(&[123]);
     let x2 = Secpk1Fq::from_le_bytes(&[200, 1]);
     let gx1 = Secpk1Fq::from_le_bytes(&[5]);
     let gx2 = Secpk1Fq::from_le_bytes(&[4]);
 
-    let (actual_x, actual_gx) = XY2Selector(x1, x2, gx1, gx2);
+    let (actual_x, actual_gx) = xy2_selector(x1, x2, gx1, gx2);
     assert(actual_x == x2);
     assert(actual_gx == Secpk1Fq::from_le_bytes(&[2]));
 }
 
 #[test]
-fn test_MapToCurve() {
+fn test_map_to_curve() {
     let u0_bytes = Secpk1Fq::from_le_bytes(
         &[
         97, 43, 138, 176, 151, 243, 115, 72,
@@ -134,7 +133,7 @@ fn test_MapToCurve() {
     ]
     );
 
-    let (x, y) = MapToCurve(u0_bytes);
+    let (x, y) = map_to_curve(u0_bytes);
 
     let expected_x = Secpk1Fq::from_le_bytes(
         &[

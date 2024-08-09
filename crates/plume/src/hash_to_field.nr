@@ -1,27 +1,10 @@
 use std::bigint::Secpk1Fq;
-use crate::expand_message_xmd::ExpandMessageXmd;
+use crate::expand_message_xmd::expand_message_xmd;
 use crate::constants::SECP256K1_PRIME;
 use crate::ec_ops::Point;
 use crate::utils::{rev_bytes_48, to_u8_arr};
 
-// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
-pub fn HashToField<let N: u32>(msg: [u8; N]) -> Point {
-    let expand_message_xmd = ExpandMessageXmd(msg);
-
-    let mut u0_bytes_to_registers = [0 as u8; 48];
-    let mut u1_bytes_to_registers = [0 as u8; 48];
-
-    for i in 0..48 {
-        u0_bytes_to_registers[i] = expand_message_xmd[i];
-        u1_bytes_to_registers[i] = expand_message_xmd[48 + i];
-    }
-
-    let u0_bytes_to_registers = BytesToRegisters(u0_bytes_to_registers);
-    let u1_bytes_to_registers = BytesToRegisters(u1_bytes_to_registers);
-    (u0_bytes_to_registers, u1_bytes_to_registers)
-}
-
-fn BytesToRegisters(ui: [u8; 48]) -> Secpk1Fq {
+fn bytes_to_registers(ui: [u8; 48]) -> Secpk1Fq {
     let ui = rev_bytes_48(ui);
 
     // 2^128
@@ -40,6 +23,23 @@ fn BytesToRegisters(ui: [u8; 48]) -> Secpk1Fq {
     res * temp + Secpk1Fq::from_le_bytes(to_u8_arr(small))
 }
 
+// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
+pub fn hash_to_field<let N: u32>(msg: [u8; N]) -> Point {
+    let expand_message_xmd = expand_message_xmd(msg);
+
+    let mut u0_bytes_to_registers = [0 as u8; 48];
+    let mut u1_bytes_to_registers = [0 as u8; 48];
+
+    for i in 0..48 {
+        u0_bytes_to_registers[i] = expand_message_xmd[i];
+        u1_bytes_to_registers[i] = expand_message_xmd[48 + i];
+    }
+
+    let u0_bytes_to_registers = bytes_to_registers(u0_bytes_to_registers);
+    let u1_bytes_to_registers = bytes_to_registers(u1_bytes_to_registers);
+    (u0_bytes_to_registers, u1_bytes_to_registers)
+}
+
 #[test]
 fn test_u0_bytes_to_registers() {
     let u0_bytes = [
@@ -48,7 +48,7 @@ fn test_u0_bytes_to_registers() {
         197, 77, 255, 208, 84, 39, 78, 219, 36, 136, 85, 230, 17, 144, 196, 98
     ];
 
-    let u0_bytes_to_registers = BytesToRegisters(u0_bytes);
+    let u0_bytes_to_registers = bytes_to_registers(u0_bytes);
     let expected_u0_bytes_to_registers = Secpk1Fq::from_le_bytes(
         &[
         97, 43, 138, 176, 151, 243, 115, 72,
@@ -68,7 +68,7 @@ fn test_u1_bytes_to_registers() {
         118, 108, 238, 235, 111, 248, 76, 222, 204, 214, 155, 224, 231, 179, 153, 209
     ];
 
-    let u1_bytes_to_registers = BytesToRegisters(u1_bytes);
+    let u1_bytes_to_registers = bytes_to_registers(u1_bytes);
     let expected_u1_bytes_to_registers = Secpk1Fq::from_le_bytes(
         &[
         0, 158, 104, 228, 242, 160, 170, 77,

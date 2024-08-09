@@ -9,28 +9,7 @@ fn get_dst_prime() -> [u8] {
     ]
 }
 
-// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-expand_message_xmd
-pub fn ExpandMessageXmd<let N: u32>(msg: [u8; N]) -> [u8; 96] {
-    let b0 = MsgPrime(msg);
-    let b1 = HashB(1, b0);
-    let b2 = HashBi(2, b0, b1);
-    let b3 = HashBi(3, b0, b2);
-
-    // Or maybe reverse bits in bi
-    let mut out = [0 as u8; 96];
-    for i in 0..32 {
-        out[i] = b1[i];
-    }
-    for i in 0..32 {
-        out[32 + i] = b2[i];
-    }
-    for i in 0..32 {
-        out[64 + i] = b3[i];
-    }
-    out
-}
-
-fn MsgPrime<let N: u32>(msg: [u8; N]) -> [u8; 32] {
+fn msg_prime<let N: u32>(msg: [u8; N]) -> [u8; 32] {
     let lib_str = [0, 96];
     let mut msg_prime = [0 as u8; PLUME_MSG_LEN + 64 + 2 + 50 + 1]; // padding size
     let dst_prime = get_dst_prime();
@@ -50,7 +29,7 @@ fn MsgPrime<let N: u32>(msg: [u8; N]) -> [u8; 32] {
     sha256_var(msg_prime, msg_prime.len() as u64)
 }
 
-fn HashB(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
+fn hash_b(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
     assert(b_idx < 8);
     let dst_prime = get_dst_prime();
 
@@ -66,14 +45,35 @@ fn HashB(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
     sha256_var(res, res.len() as u64)
 }
 
-fn HashBi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
+fn hash_bi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
     assert(b_idx < 8);
 
     let mut res = [0 as u8; 32];
     for i in 0..32 {
         res[i] = b0[i] ^ b1[i];
     }
-    HashB(b_idx, res)
+    hash_b(b_idx, res)
+}
+
+// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-expand_message_xmd
+pub fn expand_message_xmd<let N: u32>(msg: [u8; N]) -> [u8; 96] {
+    let b0 = msg_prime(msg);
+    let b1 = hash_b(1, b0);
+    let b2 = hash_bi(2, b0, b1);
+    let b3 = hash_bi(3, b0, b2);
+
+    // Or maybe reverse bits in bi
+    let mut out = [0 as u8; 96];
+    for i in 0..32 {
+        out[i] = b1[i];
+    }
+    for i in 0..32 {
+        out[32 + i] = b2[i];
+    }
+    for i in 0..32 {
+        out[64 + i] = b3[i];
+    }
+    out
 }
 
 // Failed if the PLUME_MSG_LEN constant has a value other than 3
@@ -82,7 +82,7 @@ fn HashBi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
 fn test_b0() {
     let msg = [97, 98, 99];
 
-    let b0 = MsgPrime(msg);
+    let b0 = msg_prime(msg);
     let expected_b0 = [
         99, 4, 75, 36, 124, 254, 65, 234, 207, 65, 212, 122, 206, 186, 87,
         48, 157, 28, 243, 255, 59, 178, 30, 40, 136, 85, 202, 99, 135, 177,
@@ -100,7 +100,7 @@ fn test_b1() {
         127, 169
     ];
 
-    let b1 = HashB(1, b0);
+    let b1 = hash_b(1, b0);
     let expected_b1 = [
         232, 52, 124, 173, 72, 171, 78, 49, 157, 123, 39, 85, 32, 234, 129,
         207, 18, 138, 171, 93, 54, 121, 161, 247, 96, 30, 59, 222, 172, 154,
@@ -122,7 +122,7 @@ fn test_b2() {
         81, 208
     ];
 
-    let b2 = HashBi(2, b0, b1);
+    let b2 = hash_bi(2, b0, b1);
     let expected_b2 = [
         197, 77, 255, 208, 84, 39, 78, 219, 36, 136, 85, 230, 17, 144, 196, 98,
         167, 187, 97, 236, 186, 142, 64, 10, 154, 118, 213, 174, 1, 78, 135,
@@ -143,7 +143,7 @@ fn test_b3() {
         167, 187, 97, 236, 186, 142, 64, 10, 154, 118, 213, 174, 1, 78, 135, 255
     ];
 
-    let b3 = HashBi(3, b0, b2);
+    let b3 = hash_bi(3, b0, b2);
     let expected_b3 = [
         88, 151, 182, 93, 163, 181, 149, 168, 19, 208, 253, 203, 206, 13, 49,
         111, 118, 108, 238, 235, 111, 248, 76, 222, 204, 214, 155, 224, 231,
@@ -159,7 +159,7 @@ fn tests_expand_message_xmd() {
     // "abc" message
     let msg = [97, 98, 99];
 
-    let expand_message_xmd = ExpandMessageXmd(msg);
+    let expand_message_xmd = expand_message_xmd(msg);
     let expected_expand_message_xmd = [
         232, 52, 124, 173, 72, 171, 78, 49, 157, 123, 39, 85, 32, 234, 129,
         207, 18, 138, 171, 93, 54, 121, 161, 247, 96, 30, 59, 222, 172, 154,

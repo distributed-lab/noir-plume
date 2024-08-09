@@ -4,7 +4,7 @@ use crate::constants::ZERO;
 type Point = (Secpk1Fq, Secpk1Fq);
 
 // Operations taken from the http://delta.cs.cinvestav.mx/~francisco/cripto/ellipticbg.pdf doc
-pub fn PointAdd(p0: Point, p1: Point) -> Point {
+pub fn point_add(p0: Point, p1: Point) -> Point {
     let (x0, y0) = p0;
     let (x1, y1) = p1;
 
@@ -14,15 +14,7 @@ pub fn PointAdd(p0: Point, p1: Point) -> Point {
     (x2, y2)
 }
 
-// Convenient form for PointMul
-fn point_add(x0: Secpk1Fq, y0: Secpk1Fq, x1: Secpk1Fq, y1: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
-    let lambda = (y1 - y0) / (x1 - x0);
-    let x2 = (lambda * lambda - x0 - x1);
-    let y2 = (lambda * (x0 - x2) - y0);
-    (x2, y2)
-}
-
-fn DoublePoint(p: Point) -> Point {
+fn double_point(p: Point) -> Point {
     let (x, y) = p;
     let two = Secpk1Fq::from_le_bytes(&[2]);
     let three = Secpk1Fq::from_le_bytes(&[3]);
@@ -33,8 +25,7 @@ fn DoublePoint(p: Point) -> Point {
     (x3, y3)
 }
 
-// Can do it without first_add var using point at infinity
-pub fn PointMul(scalar: [u8; 32], mut p: Point) -> Point {
+pub fn point_mul(scalar: [u8; 32], mut p: Point) -> Point {
     let mut res = (ZERO, ZERO);
     let mut first_add = true;
 
@@ -45,10 +36,10 @@ pub fn PointMul(scalar: [u8; 32], mut p: Point) -> Point {
                     res = p;
                     first_add = false;
                 } else {
-                    res = PointAdd(res, p);
+                    res = point_add(res, p);
                 }
             }
-            p = DoublePoint(p);
+            p = double_point(p);
         }
     }
     res
@@ -88,7 +79,7 @@ fn test_point_add_with_msg_abc() {
     ]
         ));
 
-    let actual_p = PointAdd(p0, p1);
+    let actual_p = point_add(p0, p1);
     let expected_p = (Secpk1Fq::from_le_bytes(
             &[
         75, 44, 203, 179, 31, 241, 159, 189,
@@ -119,7 +110,7 @@ fn test_double_point() {
     ]
         ));
 
-    let actual_p = DoublePoint(p);
+    let actual_p = double_point(p);
     let res_x = Secpk1Fq::from_le_bytes(
         &[
         205, 200, 174, 0, 106, 168, 219, 224, 33, 247, 220, 167, 239, 208, 216, 160, 32, 65, 227, 240, 29, 168, 227, 231, 209, 129, 235, 8, 128, 104, 203, 158
@@ -149,7 +140,7 @@ fn point_mul_with_scalar() {
         100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
     ];
 
-    let actual_p = PointMul(scalar, p);
+    let actual_p = point_mul(scalar, p);
     let expected_p = (Secpk1Fq::from_le_bytes(
             &[
         48, 88, 229, 103, 12, 29, 111, 98, 30, 92, 164, 115, 100, 166, 197, 252, 69, 231, 204, 194, 224, 185, 228, 221, 138, 239, 114, 129, 210, 62, 188, 87

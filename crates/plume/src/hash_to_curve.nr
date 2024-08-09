@@ -1,20 +1,16 @@
-use crate::hash_to_field::HashToField;
-use crate::map_to_curve::MapToCurve;
-use crate::iso_map::IsoMap;
-use crate::ec_ops::{Point, PointAdd};
+use crate::hash_to_field::hash_to_field;
+use crate::map_to_curve::map_to_curve;
+use crate::iso_map::iso_map;
+use crate::ec_ops::{Point, point_add};
 
 // Based on https://github.com/geometryxyz/secp256k1_hash_to_curve code
-pub fn HashToCurve<let N: u32>(msg: [u8; N]) -> Point {
-    // Step 1. u = hash_to_field(msg)
-    let u = HashToField(msg);
+pub fn hash_to_curve<let N: u32>(msg: [u8; N]) -> Point {
+    let u = hash_to_field(msg);
 
-    // Step 2. Q0 = map_to_curve(u[0])
-    // Step 3. Q1 = map_to_curve(u[1])
-    let q0 = MapToCurve(u.0);
-    let q1 = MapToCurve(u.1);
+    let q0 = map_to_curve(u.0);
+    let q1 = map_to_curve(u.1);
 
-    // Step 4. Result = IsoMap(Q0) + IsoMap(Q1)
-    PointAdd(IsoMap(q0), IsoMap(q1))
+    point_add(iso_map(q0), iso_map(q1))
 }
 
 /*
@@ -31,7 +27,7 @@ use std::bigint::Secpk1Fq;
 #[test]
 fn test_hash_to_curve_for_empty_msg() {
     let msg = [];
-    let (px, py) = HashToCurve(msg);
+    let (px, py) = hash_to_curve(msg);
 
     let expected_px = Secpk1Fq::from_le_bytes(
         &[
@@ -56,7 +52,7 @@ fn test_hash_to_curve_for_empty_msg() {
 #[test]
 fn test_hash_to_curve_for_msg_abc() {
     let msg = [97, 98, 99];
-    let (px, py) = HashToCurve(msg);
+    let (px, py) = hash_to_curve(msg);
 
     let expected_px = Secpk1Fq::from_le_bytes(
         &[
@@ -82,7 +78,7 @@ fn test_hash_to_curve_for_msg_abc() {
 fn test_hash_to_curve_for_msg_abcdef0123456789() {
     // msg.len() = 16
     let msg = [97, 98, 99, 100, 101, 102, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57];
-    let (px, py) = HashToCurve(msg);
+    let (px, py) = hash_to_curve(msg);
 
     let expected_px = Secpk1Fq::from_le_bytes(
         &[
@@ -119,7 +115,7 @@ fn test_hash_to_curve_for_msg_q128() {
         113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
         113, 113, 113, 113, 113, 113
     ];
-    let (px, py) = HashToCurve(msg);
+    let (px, py) = hash_to_curve(msg);
 
     let expected_px = Secpk1Fq::from_le_bytes(
         &[
@@ -172,7 +168,7 @@ fn test_hash_to_curve_for_msg_a512() {
         97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
         97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97
     ];
-    let (px, py) = HashToCurve(msg);
+    let (px, py) = hash_to_curve(msg);
 
     let expected_px = Secpk1Fq::from_le_bytes(
         &[

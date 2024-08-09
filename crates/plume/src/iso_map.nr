@@ -2,32 +2,13 @@ use std::bigint::Secpk1Fq;
 use crate::constants::SECP256K1_PRIME;
 use crate::ec_ops::Point;
 
-// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-3-isogeny-map-for-secp256k1
-pub fn IsoMap(p: Point) -> Point {
-    let (x, y) = p;
-
-    // Step 1. Calculate x^2
-    // Step 2. Calculate x^3
-    let x_2 = x * x;
-    let x_3 = x_2 * x;
-
-    let x_num = XNum(x, x_2, x_3);
-    let x_den = XDen(x, x_2);
-    let y_num = YNum(x, x_2, x_3);
-    let y_den = YDen(x, x_2, x_3);
-
-    let x = (x_num / x_den);
-    let y = (y * y_num / y_den);
-    (x, y)
-}
-
 /*
 k_(1,3) * x^3 + 
 k_(1,2) * x^2 + 
 k_(1,1) * x   +
 k_(1,0)
 */
-fn XNum(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
+fn x_num(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
     let k1_0 = Secpk1Fq::from_le_bytes(get_k_1_0());
     let k1_1 = Secpk1Fq::from_le_bytes(get_k_1_1());
     let k1_2 = Secpk1Fq::from_le_bytes(get_k_1_2());
@@ -40,7 +21,7 @@ x'^2 +
 k_(2,1) * x' +
 k_(2,0)
 */
-fn XDen(x: Secpk1Fq, x_2: Secpk1Fq) -> Secpk1Fq {
+fn x_den(x: Secpk1Fq, x_2: Secpk1Fq) -> Secpk1Fq {
     let k2_0 = Secpk1Fq::from_le_bytes(get_k_2_0());
     let k2_1 = Secpk1Fq::from_le_bytes(get_k_2_1());
     x_2 + k2_1 * x + k2_0
@@ -52,7 +33,7 @@ k_(3,2) * x'^2 +
 k_(3,1) * x' +
 k_(3,0)
 */
-fn YNum(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
+fn y_num(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
     let k3_0 = Secpk1Fq::from_le_bytes(get_k_3_0());
     let k3_1 = Secpk1Fq::from_le_bytes(get_k_3_1());
     let k3_2 = Secpk1Fq::from_le_bytes(get_k_3_2());
@@ -66,15 +47,34 @@ k_(4,2) * x'^2 +
 k_(4,1) * x' +
 k_(4,0)
 */
-fn YDen(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
+fn y_den(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
     let k4_0 = Secpk1Fq::from_le_bytes(get_k_4_0());
     let k4_1 = Secpk1Fq::from_le_bytes(get_k_4_1());
     let k4_2 = Secpk1Fq::from_le_bytes(get_k_4_2());
     k4_0 + k4_1 * x + k4_2 * x_2 + x_3
 }
 
+// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-3-isogeny-map-for-secp256k1
+pub fn iso_map(p: Point) -> Point {
+    let (x, y) = p;
+
+    // Step 1. Calculate x^2
+    // Step 2. Calculate x^3
+    let x_2 = x * x;
+    let x_3 = x_2 * x;
+
+    let x_num = x_num(x, x_2, x_3);
+    let x_den = x_den(x, x_2);
+    let y_num = y_num(x, x_2, x_3);
+    let y_den = y_den(x, x_2, x_3);
+
+    let x = (x_num / x_den);
+    let y = (y * y_num / y_den);
+    (x, y)
+}
+
 #[test]
-fn test_IsoMap() {
+fn test_iso_map() {
     let p = (Secpk1Fq::from_le_bytes(
             &[
         234, 37, 9, 54, 187, 229, 107, 235,
@@ -91,7 +91,7 @@ fn test_IsoMap() {
     ]
         ));
 
-    let actual_p = IsoMap(p);
+    let actual_p = iso_map(p);
 
     let expected_p = (Secpk1Fq::from_le_bytes(
             &[
