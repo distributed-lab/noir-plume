@@ -1,10 +1,10 @@
 # Tests
 
-Plume, which is written in sage. Generates test values `r`, `sk` and `msg` 32 bytes long, then runs `nargo check`, fills in the required values in `Prover.toml`, and finally runs the commands `nargo prove` and `nargo verify`.
+Plume, which is written in sage. Generates test values `r`, `sk` of 32 bytes and msg of arbitrary length, then runs `nargo check`, fills in the required values in `Prover.toml` and changes the files `main.nr` and `constants.nr`.
 
 ## Build and Run
 
 1. Install SageMath by following [these instructions](https://doc.sagemath.org/html/en/installation/index.html).
-2. To start, select the version of plume you want to test and uncomment the corresponding line in [main.nr](../crates/use/src/main.nr), and comment out the other.
-3. Change the MSG_LEN value in the [constants](../crates/plume/src/constants.nr) file to 32.
-4. Run test.sage script of the appropriate version using the command `sage test.sage v1` or `sage test.sage v2`.
+2. To start, select the version of plume you want to run "v1" or "v2", then the number of bytes for msg (non-negative number). For example, `sage gen_data.sage v2 32`.
+
+After that, you can run the program without interfering with the Noir code.

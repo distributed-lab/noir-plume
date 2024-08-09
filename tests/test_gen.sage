@@ -13,14 +13,14 @@ def get_G():
         0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
     )
 
-def generate_random_r_sk_msg():
+def generate_random_r_sk_msg(msg_len: int):
     r = os.urandom(32)
     sk = os.urandom(32)
-    msg = os.urandom(32)
+    msg = os.urandom(msg_len)
     return (list(r), list(sk), list(msg))
 
-def plume_generate_test_case(version1):
-    (r, sk, msg) = generate_random_r_sk_msg()
+def plume_generate_test_case(version1: bool, msg_len: int):
+    (r, sk, msg) = generate_random_r_sk_msg(msg_len)
     r = bytes_to_num(r)
     sk = bytes_to_num(sk)
 
