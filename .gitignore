@@ -1,5 +1,4 @@
 target
 Verifier.toml
-*.py
 .idea/
 .DS_Store

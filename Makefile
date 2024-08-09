@@ -14,7 +14,7 @@ prove:
 
 verify:
 	bb write_vk -b ./target/use.json -o ./target/vk
-	bb verify -k ./target/vk -o ./target/proof
+	bb verify -k ./target/vk -p ./target/proof
 
 zk:
 	make execute

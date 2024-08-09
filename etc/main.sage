@@ -1,7 +1,7 @@
 import sys
 import subprocess
 import toml
-load('test_gen.sage')
+load('gen.sage')
 
 # Run a shell command and print the output
 def run_command(command):
