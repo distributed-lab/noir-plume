@@ -76,8 +76,6 @@ def update_MSG_LEN_variable(msg_len: int):
 
 # Take MSG_LEN number and plume version (v1 or v2)
 if __name__ == "__main__":
-    run_command("nargo check")
-
     prover_toml_path = "../crates/use/Prover.toml"
     if len(sys.argv) != 3:
         print("Error: incorrect number of arguments")

@@ -1,6 +1,6 @@
 use std::bigint::Secpk1Fq;
 
-global MSG_LEN =32;
+global MSG_LEN = 32;
 global PLUME_MSG_LEN = MSG_LEN + 33; // Because a point is added, which is compressed to 33 bytes
 
 global ZERO = Secpk1Fq::from_le_bytes(&[0]);
