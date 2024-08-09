@@ -6,7 +6,7 @@ Plume is needed to confirm your identity without disclosing your private data, i
 
 ## How to use?
 
-### Add dependency to your projects `Nargo.toml`
+### Add dependency to your project's `Nargo.toml`
 
 ```toml
 [dependencies]

@@ -1,3 +1,2 @@
 [workspace]
 members = ["crates/plume", "crates/use"]
-default-member = "crates/plume"
