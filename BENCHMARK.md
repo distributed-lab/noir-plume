@@ -18,3 +18,5 @@ _Barrettenberg_: `0.46.1`
 | v2      | 5              | 2,998,520   | 6 minutes 51 seconds | 13 minutes 39 seconds | 8 minutes 15 seconds | 0.04 seconds   |
 | v1      | 32             | 2,998,905   | 6 minutes 29 seconds | 13 minutes 10 seconds | 8 minutes 22 seconds | 0.05 seconds   |
 | v2      | 32             | 2,998,636   | 6 minutes 32 seconds | 13 minutes 13 seconds | 8 minutes 22 seconds | 0.05 seconds   |
+| v1      | 100            | 2,999,162   | 6 minutes 20 seconds | 13 minutes 21 seconds | 8 minutes 7 seconds | 0.05 seconds   |
+| v2      | 100            | 2,998,893   | 6 minutes 22 seconds | 13 minutes 25 seconds | 8 minutes 11 seconds | 0.05 seconds   |
