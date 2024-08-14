@@ -45,7 +45,7 @@ We have provided information regarding different computational statistics such a
 
 ### Message Lenght Restriction
 
-Due to `Noir` specifics and generics limitations, message length is hardcoded to be constant value `5`.
+Due to `Noir` specifics and generics limitations, message length is hardcoded to be constant value `32`.
 In case you need to change it, see [constants.nr](./crates/plume/src/constants.nr).
 
 ### Cryptography

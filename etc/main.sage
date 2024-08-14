@@ -68,7 +68,7 @@ def update_MSG_LEN_variable(msg_len: int):
         lines = file.readlines()
     
     MSG_LEN_line = 2
-    lines[MSG_LEN_line] = lines[MSG_LEN_line][:-4] + str(msg_len) + ";\n"
+    lines[MSG_LEN_line] = f"global MSG_LEN = {msg_len};\n"
 
     with open(path + 'constants.nr', 'w') as file:
         file.writelines(lines)
