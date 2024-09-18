@@ -56,6 +56,7 @@ fn xy2_selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Se
     if s1 { (x1, gx1_sqrt) } else { (x2, gx2_sqrt) }
 }
 
+// As a result, we get a point not on the Secp256k1 curve, but a point E' that isogeny to this curve
 // Formula from https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-simplified-shallue-van-de-w
 pub fn map_to_curve(u: Secpk1Fq) -> Point {
     let z = Secpk1Fq::from_le_bytes(get_z());
