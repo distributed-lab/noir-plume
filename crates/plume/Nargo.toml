@@ -4,6 +4,6 @@ type = "lib"
 authors = ["Distributed Lab"]
 license = "MIT"
 description = "PLUME implementation in Noir."
-compiler_version = "^0.33.0"
+compiler_version = "0.33.0"
 
 [dependencies]

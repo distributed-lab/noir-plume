@@ -1,5 +1,4 @@
 use std::bigint::Secpk1Fq;
-use crate::constants::SECP256K1_PRIME;
 use crate::ec_ops::Point;
 
 /*

@@ -1,7 +1,7 @@
 use std::bigint::Secpk1Fq;
 use crate::ec_ops::Point;
 use crate::utils::mod_sqrt;
-use crate::constants::{ZERO, ONE, SECP256K1_PRIME};
+use crate::constants::{ZERO, ONE};
 
 // Constants are taken from the .circom code, converted to a little endian bytes array
 // https://github.com/geometryxyz/secp256k1_hash_to_curve/blob/main/circuits/circom/constants.circom
@@ -11,24 +11,6 @@ fn get_z() -> [u8] {
         255, 255, 255, 255, 255, 255, 255, 255,
         255, 255, 255, 255, 255, 255, 255, 255,
         255, 255, 255, 255, 255, 255, 255, 255
-    ]
-}
-
-fn get_c1() -> [u8] {
-    [
-        195, 69, 35, 141, 142, 213, 1, 170,
-        253, 116, 45, 232, 152, 255, 244, 109,
-        12, 123, 232, 211, 245, 77, 12, 160,
-        178, 56, 133, 113, 238, 108, 197, 11
-    ]
-}
-
-fn get_c2() -> [u8] {
-    [
-        106, 208, 69, 23, 116, 209, 69, 23,
-        93, 116, 209, 69, 23, 93, 116, 209,
-        69, 23, 93, 116, 209, 69, 23, 93,
-        116, 209, 69, 23, 93, 116, 209, 69
     ]
 }
 
