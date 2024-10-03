@@ -45,8 +45,8 @@ def update_prover_toml(filepath, version1: bool, msg_len: int):
 
 def update_plume_version(is_v1: bool):
     path = "../crates/use/src/"
-    p1_line = 13
-    p2_line = 14
+    p1_line = 12
+    p2_line = 13
 
     with open(path + 'main.nr', 'r') as file:
         lines = file.readlines()

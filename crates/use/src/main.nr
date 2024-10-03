@@ -8,7 +8,6 @@ pub fn main(msg: [u8; MSG_LEN], c: [u8; 32], s: [u8; 32], pk: [[u8; 32]; 2], nul
     let nullifier = (
         Secpk1Fq::from_le_bytes(to_u8_arr(nullifier[0])), Secpk1Fq::from_le_bytes(to_u8_arr(nullifier[1]))
     );
-
     // Choose your plume variant and comment the other
 
     // plume_v1(msg, c, s, pk, nullifier);
