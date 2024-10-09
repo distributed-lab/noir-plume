@@ -4,7 +4,8 @@ type = "bin"
 authors = ["Distributed Lab"]
 license = "MIT"
 description = "PLUME usage in Noir."
-compiler_version = "0.33.0"
+compiler_version = ">=0.34.0"
 
 [dependencies]
 plume = { path = "../plume" }
+ec_ops_test = { path = "../ec_ops_test" }

@@ -7,3 +7,4 @@ description = "PLUME implementation in Noir."
 compiler_version = ">=0.34.0"
 
 [dependencies]
+bignum = {tag = "v0.3.5", git = "https://github.com/noir-lang/noir-bignum"}

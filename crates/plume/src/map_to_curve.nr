@@ -53,10 +53,13 @@ pub fn map_to_curve(u: Secpk1Fq) -> Point {
     let gx2 = x2 * x2 * x2 + a * x2 + b;
     let (x, y) = xy2_selector(x1, x2, gx1, gx2);
 
-    let left_sgn  = (u.to_le_bytes()[0] as Field).to_le_bits(8)[0];
-    let right_sgn = (y.to_le_bytes()[0] as Field).to_le_bits(8)[0];
+    // let left_sgn  = (u.to_le_bytes()[0] as Field).to_le_bits(8)[0];
+    // let right_sgn = (y.to_le_bytes()[0] as Field).to_le_bits(8)[0];
 
-    let y = if left_sgn == right_sgn { y } else { ZERO - y };
+    let left:  [u1; 8] = (u.to_le_bytes()[0] as Field).to_le_bits();
+    let right: [u1; 8] = (y.to_le_bytes()[0] as Field).to_le_bits();
+
+    let y = if left[0] == right[0] { y } else { ZERO - y };
     (x, y)
 }
 
