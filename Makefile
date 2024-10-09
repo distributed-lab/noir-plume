@@ -26,12 +26,12 @@ verify:
 	bb verify -k ./target/vk -p ./target/proof
 
 
-zk:
-	make execute
-	make prove
-	make verify
-
 zk_ultra_honk:
 	make execute
 	make prove_ultra_honk
 	make verify_ultra_honk
+	
+zk:
+	make execute
+	make prove
+	make verify
