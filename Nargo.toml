@@ -1,2 +1,3 @@
 [workspace]
-members = ["crates/plume", "crates/use", "crates/ec_ops_test"]
+members = ["crates/plume", "crates/use"]
+# "crates/ec_ops_test" - To test the number of opcodes for the old and new versions

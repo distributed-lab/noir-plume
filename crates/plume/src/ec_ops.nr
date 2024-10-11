@@ -1,7 +1,7 @@
 use std::bigint::Secpk1Fq;
 use crate::constants::ZERO;
 
-type Point = (Secpk1Fq, Secpk1Fq);
+pub type Point = (Secpk1Fq, Secpk1Fq);
 
 // Operations taken from the http://delta.cs.cinvestav.mx/~francisco/cripto/ellipticbg.pdf doc
 pub fn point_add(p0: Point, p1: Point) -> Point {

@@ -8,7 +8,7 @@ mod iso_map;
 mod ec_ops;
 
 use std::bigint::Secpk1Fq;
-use std::sha256::sha256_var;
+use std::hash::sha256;
 
 use crate::utils::rev_bytes_32;
 use crate::hash_to_curve::hash_to_curve;
@@ -82,7 +82,7 @@ fn sha256_6_coordinates(nullifier: Point, gr: Point, hr: Point) -> [u8; 32] {
             res[i*33 + j] = compressed[i][j];
         }
     }
-    sha256_var(res, res.len() as u64)
+    sha256(res)
 }
 
 fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: Point) -> [u8; 32] {
@@ -101,7 +101,7 @@ fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: P
             res[i*33 + j] = compressed[i][j];
         }
     }
-    sha256_var(res, res.len() as u64)
+    sha256(res)
 }
 
 // r*G - r_point
