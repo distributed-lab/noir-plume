@@ -1,5 +1,7 @@
 use std::bigint::Secpk1Fq;
-use crate::constants::{ONE, SECP256K1_PRIME};
+use crate::constants::{SECP256K1_PRIME};  // ONE too
+
+global ONE = Secpk1Fq::from_le_bytes(&[0]);
 
 // helper method for convenient Secpk1Fq conversion
 pub fn to_u8_arr<let N: u32>(smth: [u8; N]) -> [u8] {
