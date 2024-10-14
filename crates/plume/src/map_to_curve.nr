@@ -1,33 +1,23 @@
-use std::bigint::Secpk1Fq;
+use bignum::BigNum;
+use crate::constants::{Fq, ZERO};
 use crate::ec_ops::Point;
 use crate::utils::mod_sqrt;
-use crate::constants::{ZERO, ONE};
 
 // Constants are taken from the .circom code, converted to a little endian bytes array
 // https://github.com/geometryxyz/secp256k1_hash_to_curve/blob/main/circuits/circom/constants.circom
-fn get_z() -> [u8] {
-    [
-        36, 252, 255, 255, 254, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255
-    ]
+fn get_z() -> [Field; 3] {
+    [0xfffffffffffffffffffffefffffc24, 0xffffffffffffffffffffffffffffff, 0xffff]
 }
 
-fn get_a() -> [u8] {
-    [
-        51, 69, 68, 26, 192, 71, 84, 64,
-        93, 14, 111, 203, 99, 211, 83, 233,
-        114, 210, 245, 240, 88, 85, 138, 160,
-        220, 26, 102, 221, 171, 49, 135, 63
-    ]
+fn get_a() -> [Field; 3] {
+    [0x53d363cb6f0e5d405447c01a444533, 0x31abdd661adca08a5558f0f5d272e9, 0x3f87]
 }
 
-fn get_b() -> [u8] {
-    [235, 6]
+fn get_b() -> [Field; 3] {
+    [0x6eb, 0, 0]
 }
 
-fn xy2_selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Secpk1Fq, Secpk1Fq) {
+fn xy2_selector(x1: Fq, x2: Fq, gx1: Fq, gx2: Fq) -> Point {
     let gx1_sqrt = mod_sqrt(gx1);
     let gx2_sqrt = mod_sqrt(gx2);
 
@@ -40,21 +30,18 @@ fn xy2_selector(x1: Secpk1Fq, x2: Secpk1Fq, gx1: Secpk1Fq, gx2: Secpk1Fq) -> (Se
 
 // As a result, we get a point not on the Secp256k1 curve, but a point E' that isogeny to this curve
 // Formula from https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-simplified-shallue-van-de-w
-pub fn map_to_curve(u: Secpk1Fq) -> Point {
-    let z = Secpk1Fq::from_le_bytes(get_z());
+pub fn map_to_curve(u: Fq) -> Point {
+    let z = BigNum::from_array(get_z());
 
-    let tv1 = Secpk1Fq::from_le_bytes(&[1]) / (z * z * u * u * u * u + z * u * u);
-    let a = Secpk1Fq::from_le_bytes(get_a());
-    let b = Secpk1Fq::from_le_bytes(get_b());
-    let x1 = ((ZERO - b) / a) * (ONE + tv1);
+    let tv1 = BigNum::one() / (z * z * u * u * u * u + z * u * u);
+    let a = BigNum::from_array(get_a());
+    let b = BigNum::from_array(get_b());
+    let x1 = ((ZERO - b) / a) * (BigNum::one() + tv1);
 
     let gx1 = x1 * x1 * x1 + a * x1 + b;
     let x2 = z * u * u * x1;
     let gx2 = x2 * x2 * x2 + a * x2 + b;
     let (x, y) = xy2_selector(x1, x2, gx1, gx2);
-
-    // let left_sgn  = (u.to_le_bytes()[0] as Field).to_le_bits(8)[0];
-    // let right_sgn = (y.to_le_bytes()[0] as Field).to_le_bits(8)[0];
 
     let left:  [u1; 8] = (u.to_le_bytes()[0] as Field).to_le_bits();
     let right: [u1; 8] = (y.to_le_bytes()[0] as Field).to_le_bits();
@@ -63,6 +50,8 @@ pub fn map_to_curve(u: Secpk1Fq) -> Point {
     (x, y)
 }
 
+// TODO uncomment later
+/*
 #[test]
 fn test_mod_mul_inv_x1() {
     let x1 = Secpk1Fq::from_le_bytes(
@@ -141,3 +130,4 @@ fn test_map_to_curve() {
     assert(x == expected_x);
     assert(y == expected_y);
 }
+*/

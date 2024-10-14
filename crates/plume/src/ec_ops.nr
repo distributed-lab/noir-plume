@@ -1,12 +1,11 @@
 use crate::constants::ZERO;
 use bignum::BigNum;
-use bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
+use crate::constants::Fq;
 
-type Fq = BigNum<3, Secp256k1_Fq_Params>;
-type Point = (Fq, Fq);
+pub type Point = (Fq, Fq);
 
 // Operations taken from the http://delta.cs.cinvestav.mx/~francisco/cripto/ellipticbg.pdf doc
-fn point_add(p0: Point, p1: Point) -> Point {
+pub fn point_add(p0: Point, p1: Point) -> Point {
     let (x0, y0) = p0;
     let (x1, y1) = p1;
 
@@ -27,7 +26,7 @@ fn double_point(p: Point) -> Point {
     (x3, y3)
 }
 
-fn point_mul(scalar: [u8; 32], mut p: Point) -> Point {
+pub fn point_mul(scalar: [u8; 32], mut p: Point) -> Point {
     let mut res = (ZERO, ZERO);
     let mut first_add = true;
 

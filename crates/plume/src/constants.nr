@@ -1,16 +1,9 @@
-use std::bigint::Secpk1Fq;
 use bignum::BigNum;
+use bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
+
+pub type Fq = BigNum<3, Secp256k1_Fq_Params>;
 
 pub global MSG_LEN = 32;
 pub global PLUME_MSG_LEN = MSG_LEN + 33; // Because a point is added, which is compressed to 33 bytes
 
 pub global ZERO = BigNum::from_array([0, 0, 0]);
-pub global ONE = BigNum::from_array([1, 0, 0]);
-
-// 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1 constant in byte view
-pub global SECP256K1_PRIME = Secpk1Fq::from_le_bytes(&[
-    47, 252, 255, 255, 254, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255
-]);
