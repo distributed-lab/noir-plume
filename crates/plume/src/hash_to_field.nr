@@ -1,40 +1,29 @@
+use std::bigint::Secpk1Fq;
 use bignum::BigNum;
 use crate::expand_message_xmd::expand_message_xmd;
 use crate::constants::Fq;
 use crate::ec_ops::Point;
-use crate::utils::rev_bytes_48;
+use crate::utils::{to_u8_arr, to_u8_N, rev_bytes_32, rev_bytes_48};
 
 // TODO think more about it
 fn bytes_to_registers(ui: [u8; 48]) -> Fq {
     let ui = rev_bytes_48(ui);
 
-    // 2^240, 30 bytes shift
-    let temp: Fq = BigNum::from_array([0, 0, 1]);
-    let mut first: Field = 0;   // 15 bytes
-    let mut second: Field = 0;  // 15 bytes
-    let mut third: Field = 0;   // 15 bytes
-    let mut fourth: Field = 0;  // last 3 bytes
+    // 2^128
+    let temp = Secpk1Fq::from_le_bytes(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    let mut small = [0 as u8; 16];
+    let mut big = [0 as u8; 32];
 
-    for i in 0..15 {
-        first = (first * 256) + (ui[i] as Field);
+    for i in 0..16 {
+        small[i] = ui[i];
     }
-    for i in 0..15 {
-        second = (second * 256) + (ui[i+15] as Field);
-    }
-    for i in 0..15 {
-        third = (third * 256) + (ui[i+30] as Field);
-    }
-    for i in 0..3 {
-        fourth = (fourth * 256) + (ui[i+45] as Field);
+    for i in 0..32 {
+        big[i] = ui[i+16];
     }
 
-    println(first);
-    print(second);
-    println(third);
-    println(fourth);
-
-    let big: Fq = BigNum::from_array([third, fourth, 0]);
-    big * temp + BigNum::from_array([first, second, 0])
+    let mut res = Secpk1Fq::from_le_bytes(to_u8_arr(big));
+    let bytes = (res * temp + Secpk1Fq::from_le_bytes(to_u8_arr(small))).to_le_bytes();
+    BigNum::from_be_bytes(rev_bytes_32(to_u8_N(bytes)))
 }
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
@@ -63,7 +52,7 @@ fn test_u0_bytes_to_registers() {
     ];
 
     let u0_bytes_to_registers = bytes_to_registers(u0_bytes);
-    println(u0_bytes_to_registers);
+    // println(u0_bytes_to_registers);
     let expected_u0_bytes_to_registers = BigNum::from_array([0x491f544767e18a4873f397b08a2b61, 0xab5d3679a1f7601e3bdf94ced1f43e, 0x128a]);
     assert(u0_bytes_to_registers == expected_u0_bytes_to_registers);
 }

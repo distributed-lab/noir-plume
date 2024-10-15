@@ -127,7 +127,6 @@ fn test_compress_ec_point() {
     assert(compressed_pk == expected_compressed_pk);
 }
 
-
 // TODO uncomment later
 /*
 #[test]

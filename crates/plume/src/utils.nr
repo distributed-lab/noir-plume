@@ -1,6 +1,19 @@
 use bignum::BigNum;
 use crate::constants::Fq;
 
+// helper method for convenient Secpk1Fq conversion
+pub fn to_u8_arr<let N: u32>(smth: [u8; N]) -> [u8] {
+    smth
+}
+
+pub fn to_u8_N<let N: u32>(smth: [u8]) -> [u8; N] {
+    let mut res = [0 as u8; N];
+    for i in 0..smth.len() {
+        res[i] = smth[i];
+    }
+    res
+}
+
 pub fn rev_bytes_32(mut bytes: [u8; 32]) -> [u8; 32] {
     for i in 0..16 {
         let temp = bytes[i];
@@ -22,7 +35,7 @@ pub fn rev_bytes_48(mut bytes: [u8; 48]) -> [u8; 48] {
 // Binary power algorithm https://cp-algorithms.com/algebra/binary-exp.html
 pub fn bin_pow(mut num: Fq, pow: Fq) -> Fq {
     let mut res = BigNum::one();
-    let exp = pow.to_le_bytes();
+    let exp: [u8; 32] = pow.to_le_bytes();
 
     for i in 0..exp.len() {
         for j in 0..8 {
