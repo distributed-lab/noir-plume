@@ -1,6 +1,5 @@
 use bignum::BigNum;
 use bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
-
 pub type Fq = BigNum<3, Secp256k1_Fq_Params>;
 
 pub global MSG_LEN: u32 = 32;

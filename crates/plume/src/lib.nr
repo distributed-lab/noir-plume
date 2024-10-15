@@ -7,7 +7,6 @@ mod map_to_curve;
 mod iso_map;
 mod ec_ops;
 
-use std::bigint::Secpk1Fq;
 use std::hash::sha256;
 use bignum::BigNum;
 
@@ -31,9 +30,11 @@ fn a_div_b_pow_c(a: Point, b: Point, c: [u8; 32]) -> Point {
 
 // Apply byte reverse
 fn compress_ec_point(pk: Point) -> [u8; 33] {
-    let x = pk.0.to_le_bytes();
+    let x: [u8; 32] = pk.0.to_le_bytes();
     let mut compressed = [0 as u8; 33];
-    compressed[0] = (pk.1.to_le_bytes()[0] & 1) + 2;
+
+    let tmp: [u8; 32] = pk.1.to_le_bytes();
+    compressed[0] = (tmp[0] & 1) + 2;
 
     for i in 0..32 {
         compressed[32-i] = x[i];
@@ -128,33 +129,22 @@ fn test_compress_ec_point() {
 }
 
 // TODO uncomment later
-/*
 #[test]
 fn test_nullifier() {
     let sk = [
         100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
     ];
-    let H = (Secpk1Fq::from_le_bytes(
-            &[
-        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
-    ]
-        ));
+    let H = (
+        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
+    );
 
     let nullifier = point_mul(sk, H);
-    let expected_nullifier = (Secpk1Fq::from_le_bytes(
-            &[
+    let expected_nullifier = ([
         48, 88, 229, 103, 12, 29, 111, 98, 30, 92, 164, 115, 100, 166, 197, 252, 69, 231, 204, 194, 224, 185, 228, 221, 138, 239, 114, 129, 210, 62, 188, 87
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
+    ], [
         115, 203, 158, 229, 127, 8, 214, 145, 168, 143, 163, 126, 230, 58, 159, 159, 96, 17, 225, 136, 33, 221, 110, 228, 58, 243, 88, 141, 72, 65, 47, 106
-    ]
-        ));
-    assert(nullifier == expected_nullifier);
+    ]);
+    assert((nullifier.0.to_le_bytes(), nullifier.1.to_le_bytes()) == expected_nullifier);
 }
 
 #[test]
@@ -172,18 +162,13 @@ fn test_r_point() {
     let s_point = point_mul(s, G);
     let r_point = a_div_b_pow_c(s_point, pk, c);
 
-    let expected_r_point = (Secpk1Fq::from_le_bytes(
-            &[
+    let expected_r_point = ([
         4, 152, 254, 54, 199, 45, 14, 89, 41, 132, 162, 98, 41, 102, 118, 128, 129, 101, 19, 40, 42, 109, 188, 122, 210, 42, 126, 14, 53, 164, 140, 157
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
+    ], [
         161, 197, 112, 118, 106, 129, 84, 144, 155, 45, 71, 18, 81, 228, 235, 188, 198, 170, 195, 217, 53, 200, 35, 70, 133, 78, 253, 138, 11, 195, 8, 255
-    ]
-        ));
-    assert(r_point == expected_r_point);
+    ]);
+    assert((r_point.0.to_le_bytes(), r_point.1.to_le_bytes()) == expected_r_point);
 }
-*/
 
 // Failed if the MSG_LEN constant has a value other than 29
 /*
@@ -218,8 +203,6 @@ fn test_hashed_to_curve_msg_with_pk() {
 }
 */
 
-// TODO uncomment later
-/*
 #[test]
 fn test_hashed_to_curve_r() {
     let s = [
@@ -228,35 +211,27 @@ fn test_hashed_to_curve_r() {
     let sk = [
         100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
     ];
-    let H = (Secpk1Fq::from_le_bytes(
-            &[
-        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
-    ]
-        ));
+    let H = (
+        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
+    );
     let c = [
         84, 50, 232, 188, 237, 50, 59, 254, 35, 82, 174, 186, 20, 85, 170, 45, 111, 86, 182, 159, 71, 26, 115, 32, 175, 219, 109, 146, 44, 252, 167, 198
     ];
 
     let nullifier = point_mul(sk, H);
     let h_pow_s = point_mul(s, H);
-    let hashed_to_curve_r = a_div_b_pow_c(h_pow_s, nullifier, c);
+    let (x, y) = a_div_b_pow_c(h_pow_s, nullifier, c);
 
-    let expected_hashed_to_curve_r = (Secpk1Fq::from_le_bytes(
-            &[
+    let expected_hashed_to_curve_r = ([
         124, 185, 39, 205, 252, 88, 5, 39, 219, 49, 33, 21, 77, 159, 87, 105, 40, 125, 226, 84, 166, 233, 177, 165, 167, 159, 197, 99, 111, 124, 1, 109
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
+    ], [
         237, 86, 172, 119, 183, 144, 226, 164, 161, 245, 202, 198, 211, 68, 63, 62, 248, 101, 138, 168, 128, 143, 74, 86, 140, 129, 153, 92, 251, 67, 108, 88
-    ]
-        ));
-    assert(hashed_to_curve_r == expected_hashed_to_curve_r);
+    ]);
+    assert((x.to_le_bytes(), y.to_le_bytes()) == expected_hashed_to_curve_r);
 }
 
+// TODO uncomment later
+/*
 #[test]
 fn test_sha_256_12_coordinates() {
     let hashed_to_curve = (Secpk1Fq::from_le_bytes(
