@@ -1,29 +1,21 @@
-use std::bigint::Secpk1Fq;
 use bignum::BigNum;
 use crate::expand_message_xmd::expand_message_xmd;
 use crate::constants::Fq;
 use crate::ec_ops::Point;
-use crate::utils::{to_u8_arr, to_u8_N, rev_bytes_32, rev_bytes_48};
 
-// TODO think more about it
 fn bytes_to_registers(ui: [u8; 48]) -> Fq {
-    let ui = rev_bytes_48(ui);
-
-    // 2^128
-    let temp = Secpk1Fq::from_le_bytes(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-    let mut small = [0 as u8; 16];
+    let shift = BigNum::from_array([0, 0x100, 0]);
+    let mut small = [0 as u8; 32];
     let mut big = [0 as u8; 32];
 
     for i in 0..16 {
-        small[i] = ui[i];
+        small[i+16] = ui[i+32];
     }
     for i in 0..32 {
-        big[i] = ui[i+16];
+        big[i] = ui[i];
     }
-
-    let mut res = Secpk1Fq::from_le_bytes(to_u8_arr(big));
-    let bytes = (res * temp + Secpk1Fq::from_le_bytes(to_u8_arr(small))).to_le_bytes();
-    BigNum::from_be_bytes(rev_bytes_32(to_u8_N(bytes)))
+    let res = BigNum::from_be_bytes(big);
+    res * shift + BigNum::from_be_bytes(small)
 }
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
@@ -52,7 +44,6 @@ fn test_u0_bytes_to_registers() {
     ];
 
     let u0_bytes_to_registers = bytes_to_registers(u0_bytes);
-    // println(u0_bytes_to_registers);
     let expected_u0_bytes_to_registers = BigNum::from_array([0x491f544767e18a4873f397b08a2b61, 0xab5d3679a1f7601e3bdf94ced1f43e, 0x128a]);
     assert(u0_bytes_to_registers == expected_u0_bytes_to_registers);
 }

@@ -76,7 +76,7 @@ pub fn expand_message_xmd<let N: u32>(msg: [u8; N]) -> [u8; 96] {
     out
 }
 
-// Failed if the PLUME_MSG_LEN constant has a value other than 3
+// Failed, if PLUME_MSG_LEN != 3
 /*
 #[test]
 fn test_b0() {

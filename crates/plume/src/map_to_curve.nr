@@ -51,8 +51,6 @@ pub fn map_to_curve(u: Fq) -> Point {
     let y = if left[0] == right[0] { y } else { ZERO - y };
     (x, y)
 }
-
-// TODO uncomment later
 #[test]
 fn test_mod_mul_inv_x1() {
     let x1: Fq = BigNum::from_array([0x387936733e29cddb43759809208354, 0xc334daf72303fb27f6aad8201a9465, 0xc6f1]);

@@ -68,7 +68,7 @@ def update_MSG_LEN_variable(msg_len: int):
     with open(path + 'constants.nr', 'r') as file:
         lines = file.readlines()
     
-    MSG_LEN_line = 4
+    MSG_LEN_line = 5
     lines[MSG_LEN_line] = f"global MSG_LEN: u32 = {msg_len};\n"
 
     with open(path + 'constants.nr', 'w') as file:

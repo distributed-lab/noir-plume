@@ -12,13 +12,8 @@ use bignum::BigNum;
 
 use crate::utils::rev_bytes_32;
 use crate::hash_to_curve::hash_to_curve;
-use crate::constants::{Fq, ZERO, PLUME_MSG_LEN};
+use crate::constants::{ZERO, PLUME_MSG_LEN};
 use crate::ec_ops::{Point, point_mul, point_add};
-
-/* G in byte format:
-   Gx = 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
-   Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
-*/
 
 global G = (BigNum::from_array([0x9bfcdb2dce28d959f2815b16f81798, 0x667ef9dcbbac55a06295ce870b0702, 0x79be]),
     BigNum::from_array([0x17b448a68554199c47d08ffb10d4b8, 0xda7726a3c4655da4fbfc0e1108a8fd, 0x483a]));
@@ -128,7 +123,6 @@ fn test_compress_ec_point() {
     assert(compressed_pk == expected_compressed_pk);
 }
 
-// TODO uncomment later
 #[test]
 fn test_nullifier() {
     let sk = [
