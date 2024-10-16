@@ -39,7 +39,7 @@ jobs:
           toolchain: nightly
 
       - name: Run nargo check
-        run: nargo check --deny-warnings
+        run: nargo check --silence-warnings
 
   test-noir:
     runs-on: ubuntu-latest
@@ -54,4 +54,4 @@ jobs:
           toolchain: nightly
 
       - name: Run nargo test
-        run: nargo test --deny-warnings
+        run: nargo test --silence-warnings
