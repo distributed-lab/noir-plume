@@ -15,6 +15,6 @@ pub fn main(msg: [u8; MSG_LEN], c: [u8; 32], s: [u8; 32], pk: [[u8; 32]; 2], nul
     // plume_v1(msg, c, s, pk, nullifier);
     // plume_v2(msg, c, s, pk, nullifier);
 
-    //test_old_point_mul();
-    test_new_point_mul();
+    test_old_point_mul();
+    //test_new_point_mul();
 }

@@ -2,13 +2,32 @@
 
 > Computational statistics.
 
+## Ec Ops Test
+
+_Nargo_: `0.35.0`
+
+_Barrettenberg_: `0.56.0`
+
+_old ec ops_: `255673` ACIR Opcodes, `0` Brillig Opcodes
+
+### new ec ops
+
+| Function | ACIR Opcodes | Brillig Opcodes |
+| -------- | ------------ | --------------- |
+| old ec ops | 255673 | 0 |
+| new ec ops | 35870 | 13693 |
+| __mul | N/A | 2293 |
+| __compute_quadratic_expression_with_borrow_flags | N/A | 3595 |
+| __div | N/A | 6814 |
+| __sub_with_flags | N/A | 991 |
+
 ## Environment
 
 _Machine:_ `20 Cores, 144 GB RAM`
 
-_Nargo_: `0.33.0`
+_Nargo:_ `0.33.0`
 
-_Barrettenberg_: `0.47.1`
+_Barrettenberg:_ `0.47.1`
 
 _Maximum RAM consumption_: `43 GB`
 
@@ -16,9 +35,9 @@ _Maximum RAM consumption_: `43 GB`
 
 | Version | Message Length | Constraints | Execution Time     | Proving Time       | Writing VK Time    | Verifying Time |
 |---------|----------------|-------------|--------------------|--------------------|--------------------|----------------|
-| v1      | 5              | 2,998,712   | 13 minute 56 seconds | 13 minutes 23 seconds | 12 minutes 3 seconds | 0.06 seconds   |   
-| v2      | 5              | 2,998,520   | 13 minutes 52 seconds | 13 minutes 9 seconds | 12 minutes 14 seconds | 0.06 seconds | 
-| v1      | 32             | 2,998,905   | 14 minutes 14 seconds | 13 minutes 3 seconds | 11 minutes 44 seconds | 0.06 seconds | 
+| v1      | 5              | 2,998,712   | 13 minute 56 seconds | 13 minutes 23 seconds | 12 minutes 3 seconds | 0.06 seconds   |
+| v2      | 5              | 2,998,520   | 13 minutes 52 seconds | 13 minutes 9 seconds | 12 minutes 14 seconds | 0.06 seconds |
+| v1      | 32             | 2,998,905   | 14 minutes 14 seconds | 13 minutes 3 seconds | 11 minutes 44 seconds | 0.06 seconds |
 | v2      | 32             | 2,998,636   | 14 minutes 5 seconds | 12 minutes 55 seconds | 11 minutes 48 seconds | 0.06 seconds   |
 | v1      | 100            | 2,999,162   | 14 minutes 44 seconds | 13 minutes 4 seconds | 12 minutes 30 seconds | 0.06 seconds   |
 | v2      | 100            | 2,998,893   | 13 minutes 58 seconds | 12 minutes 57 seconds | 12 minutes 2 seconds | 0.06 seconds   |
@@ -28,7 +47,7 @@ _Maximum RAM consumption_: `43 GB`
 
 ## Environment
 
-_Machine:_ `20 Cores, 144 GB RAM`
+_Machine_: `20 Cores, 144 GB RAM`
 
 _Nargo_: `0.32.0`
 
