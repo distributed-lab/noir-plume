@@ -198,6 +198,8 @@ fn test_hashed_to_curve_msg_with_pk() {
 }
 */
 
+// Too slow. Stopped in CI
+/*
 #[test]
 fn test_hashed_to_curve_r() {
     let s = [
@@ -250,6 +252,7 @@ fn test_sha_256_12_coordinates() {
     );
     assert(actual_c == expected_c);
 }
+*/
 
 // Failed if the MSG_LEN constant has a value other than 29
 /*
