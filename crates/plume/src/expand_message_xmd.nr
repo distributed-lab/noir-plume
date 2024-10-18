@@ -1,4 +1,4 @@
-use std::sha256::sha256_var;
+use std::hash::sha256;
 use crate::constants::PLUME_MSG_LEN;
 
 fn get_dst_prime() -> [u8] {
@@ -26,7 +26,7 @@ fn msg_prime<let N: u32>(msg: [u8; N]) -> [u8; 32] {
     for i in 0..dst_prime.len() {
         msg_prime[64 + N + 2 + 1 + i] = dst_prime[i];
     }
-    sha256_var(msg_prime, msg_prime.len() as u64)
+    sha256(msg_prime)
 }
 
 fn hash_b(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
@@ -42,7 +42,7 @@ fn hash_b(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
     for i in 0..dst_prime.len() {
         res[32 + 1 + i] = dst_prime[i];
     }
-    sha256_var(res, res.len() as u64)
+    sha256(res)
 }
 
 fn hash_bi(b_idx: u8, b0: [u8; 32], b1: [u8; 32]) -> [u8; 32] {
@@ -76,7 +76,7 @@ pub fn expand_message_xmd<let N: u32>(msg: [u8; N]) -> [u8; 96] {
     out
 }
 
-// Failed if the PLUME_MSG_LEN constant has a value other than 3
+// Failed, if PLUME_MSG_LEN != 3
 /*
 #[test]
 fn test_b0() {

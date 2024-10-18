@@ -1,10 +1,5 @@
-use std::bigint::Secpk1Fq;
-use crate::constants::{ONE, SECP256K1_PRIME};
-
-// helper method for convenient Secpk1Fq conversion
-pub fn to_u8_arr<let N: u32>(smth: [u8; N]) -> [u8] {
-    smth
-}
+use bignum::BigNum;
+use crate::constants::Fq;
 
 pub fn rev_bytes_32(mut bytes: [u8; 32]) -> [u8; 32] {
     for i in 0..16 {
@@ -15,19 +10,9 @@ pub fn rev_bytes_32(mut bytes: [u8; 32]) -> [u8; 32] {
     bytes
 }
 
-pub fn rev_bytes_48(mut bytes: [u8; 48]) -> [u8; 48] {
-    for i in 0..24 {
-        let temp = bytes[i];
-        bytes[i] = bytes[47-i];
-        bytes[47-i] = temp;
-    }
-    bytes
-}
-
 // Binary power algorithm https://cp-algorithms.com/algebra/binary-exp.html
-pub fn bin_pow(mut num: Secpk1Fq, pow: Secpk1Fq) -> Secpk1Fq {
-    let mut res = ONE;
-    let exp = pow.to_le_bytes();
+pub fn bin_pow(mut num: Fq, exp: [u8; 32]) -> Fq {
+    let mut res = BigNum::one();
 
     for i in 0..exp.len() {
         for j in 0..8 {
@@ -42,7 +27,9 @@ pub fn bin_pow(mut num: Secpk1Fq, pow: Secpk1Fq) -> Secpk1Fq {
 
 // We use the formula R = num^((p+1)/4), since SECP256K1_PRIME % 4 == 3
 // https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm
-pub fn mod_sqrt(num: Secpk1Fq) -> Secpk1Fq {
-    let p_plus_one = SECP256K1_PRIME + ONE;
-    bin_pow(num, p_plus_one / Secpk1Fq::from_le_bytes(&[4]))
+// secp256k1_prime is 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1 constant
+pub fn mod_sqrt(num: Fq) -> Fq {
+    let secp256k1_prime_plus_one: Fq = BigNum::from_array([0xfffffffffffffffffffffefffffc30, 0xffffffffffffffffffffffffffffff, 0xffff]);
+    let exp: [u8; 32] = (secp256k1_prime_plus_one / BigNum::from_array([4, 0, 0])).to_le_bytes();
+    bin_pow(num, exp)
 }

@@ -1,7 +1,8 @@
-use std::bigint::Secpk1Fq;
 use crate::constants::ZERO;
+use bignum::BigNum;
+use crate::constants::Fq;
 
-type Point = (Secpk1Fq, Secpk1Fq);
+pub type Point = (Fq, Fq);
 
 // Operations taken from the http://delta.cs.cinvestav.mx/~francisco/cripto/ellipticbg.pdf doc
 pub fn point_add(p0: Point, p1: Point) -> Point {
@@ -16,8 +17,8 @@ pub fn point_add(p0: Point, p1: Point) -> Point {
 
 fn double_point(p: Point) -> Point {
     let (x, y) = p;
-    let two = Secpk1Fq::from_le_bytes(&[2]);
-    let three = Secpk1Fq::from_le_bytes(&[3]);
+    let two = BigNum::from_array([2, 0, 0]);
+    let three = BigNum::from_array([3, 0, 0]);
 
     let lambda = (three * x * x) / (two * y);
     let x3 = lambda * lambda - two * x;
@@ -47,108 +48,45 @@ pub fn point_mul(scalar: [u8; 32], mut p: Point) -> Point {
 
 #[test]
 fn test_point_add_with_msg_abc() {
-    let p0 = (Secpk1Fq::from_le_bytes(
-            &[
-        215, 34, 83, 138, 195, 143, 59, 82,
-        216, 218, 186, 187, 204, 4, 102, 67,
-        34, 23, 169, 179, 209, 87, 152, 177,
-        95, 132, 38, 212, 50, 148, 221, 7
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        63, 179, 46, 18, 103, 164, 20, 64,
-        237, 27, 175, 187, 35, 229, 224, 203,
-        11, 85, 184, 144, 213, 187, 119, 50,
-        254, 207, 56, 81, 239, 136, 69, 96
-    ]
-        ));
-
-    let p1 = (Secpk1Fq::from_le_bytes(
-            &[
-        120, 31, 50, 101, 252, 100, 135, 184,
-        30, 73, 248, 5, 172, 141, 107, 4,
-        130, 39, 24, 108, 224, 81, 231, 221,
-        119, 78, 93, 209, 148, 151, 239, 233
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        179, 23, 247, 231, 232, 159, 145, 18,
-        240, 65, 170, 20, 99, 215, 45, 86,
-        92, 69, 113, 200, 226, 110, 35, 191,
-        20, 83, 13, 103, 83, 206, 7, 203
-    ]
-        ));
+    let p0 = (
+        BigNum::from_array([0x6604ccbbbadad8523b8fc38a5322d7, 0x9432d426845fb19857d1b3a9172243, 0x7dd]), BigNum::from_array([0xe0e523bbaf1bed4014a467122eb33f, 0x88ef5138cffe3277bbd590b8550bcb, 0x6045])
+    );
+    let p1 = (
+        BigNum::from_array([0x6b8dac05f8491eb88764fc65321f78, 0x9794d15d4e77dde751e06c18278204, 0xe9ef]), BigNum::from_array([0x2dd76314aa41f012919fe8e7f717b3, 0xce53670d5314bf236ee2c871455c56, 0xcb07])
+    );
 
     let actual_p = point_add(p0, p1);
-    let expected_p = (Secpk1Fq::from_le_bytes(
-            &[
-        75, 44, 203, 179, 31, 241, 159, 189,
-        96, 87, 32, 249, 249, 236, 182, 114,
-        238, 108, 12, 18, 147, 34, 81, 107,
-        41, 219, 66, 171, 30, 224, 119, 51
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        246, 113, 131, 156, 123, 108, 124, 72,
-        141, 104, 148, 111, 17, 182, 15, 144,
-        224, 190, 177, 1, 42, 56, 77, 4,
-        209, 235, 239, 51, 15, 137, 149, 127
-    ]
-        ));
+    let expected_p = (
+        BigNum::from_array([0xb6ecf9f9205760bd9ff11fb3cb2c4b, 0xe01eab42db296b512293120c6cee72, 0x3377]), BigNum::from_array([0xfb6116f94688d487c6c7b9c8371f6, 0x890f33efebd1044d382a01b1bee090, 0x7f95])
+    );
     assert(actual_p == expected_p);
 }
 
 #[test]
 fn test_double_point() {
-    let p = (Secpk1Fq::from_le_bytes(
-            &[
-        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
-    ]
-        ));
+    let p = (
+        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
+    );
 
     let actual_p = double_point(p);
-    let res_x = Secpk1Fq::from_le_bytes(
-        &[
-        205, 200, 174, 0, 106, 168, 219, 224, 33, 247, 220, 167, 239, 208, 216, 160, 32, 65, 227, 240, 29, 168, 227, 231, 209, 129, 235, 8, 128, 104, 203, 158
-    ]
+    let expected_p = (
+        BigNum::from_array([0xd8d0efa7dcf721e0dba86a00aec8cd, 0x688008eb81d1e7e3a81df0e34120a0, 0x9ecb]), BigNum::from_array([0xa6480d893bc063ee11ca12ca8e3c77, 0x7d646834bfcb7145349ff0128d0b67, 0x7a40])
     );
-    let res_y = Secpk1Fq::from_le_bytes(
-        &[
-        119, 60, 142, 202, 18, 202, 17, 238, 99, 192, 59, 137, 13, 72, 166, 103, 11, 141, 18, 240, 159, 52, 69, 113, 203, 191, 52, 104, 100, 125, 64, 122
-    ]
-    );
-    assert(actual_p.0 == res_x);
-    assert(actual_p.1 == res_y);
+    assert(actual_p == expected_p);
 }
 
 #[test]
 fn point_mul_with_scalar() {
-    let p = (Secpk1Fq::from_le_bytes(
-            &[
-        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
-    ]
-        ));
+    let p = (
+        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
+    );
     let scalar = [
         100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
     ];
 
     let actual_p = point_mul(scalar, p);
-    let expected_p = (Secpk1Fq::from_le_bytes(
-            &[
-        48, 88, 229, 103, 12, 29, 111, 98, 30, 92, 164, 115, 100, 166, 197, 252, 69, 231, 204, 194, 224, 185, 228, 221, 138, 239, 114, 129, 210, 62, 188, 87
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        115, 203, 158, 229, 127, 8, 214, 145, 168, 143, 163, 126, 230, 58, 159, 159, 96, 17, 225, 136, 33, 221, 110, 228, 58, 243, 88, 141, 72, 65, 47, 106
-    ]
-        ));
+    let expected_p: Point = (
+        BigNum::from_array([0xc5a66473a45c1e626f1d0c67e55830, 0x3ed28172ef8adde4b9e0c2cce745fc, 0x57bc]), BigNum::from_array([0x9f3ae67ea38fa891d6087fe59ecb73, 0x41488d58f33ae46edd2188e111609f, 0x6a2f])
+    );
     assert(actual_p == expected_p);
 }

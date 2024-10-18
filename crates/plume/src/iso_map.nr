@@ -1,4 +1,5 @@
-use std::bigint::Secpk1Fq;
+use bignum::BigNum;
+use crate::constants::Fq;
 use crate::ec_ops::Point;
 
 /*
@@ -7,11 +8,11 @@ k_(1,2) * x^2 +
 k_(1,1) * x   +
 k_(1,0)
 */
-fn x_num(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
-    let k1_0 = Secpk1Fq::from_le_bytes(get_k_1_0());
-    let k1_1 = Secpk1Fq::from_le_bytes(get_k_1_1());
-    let k1_2 = Secpk1Fq::from_le_bytes(get_k_1_2());
-    let k1_3 = Secpk1Fq::from_le_bytes(get_k_1_3());
+fn x_num(x: Fq, x_2: Fq, x_3: Fq) -> Fq {
+    let k1_0 = BigNum::from_array(k_1_0());
+    let k1_1 = BigNum::from_array(k_1_1());
+    let k1_2 = BigNum::from_array(k_1_2());
+    let k1_3 = BigNum::from_array(k_1_3());
     k1_0 + k1_1 * x + k1_2 * x_2 + k1_3 * x_3
 }
 
@@ -20,9 +21,9 @@ x'^2 +
 k_(2,1) * x' +
 k_(2,0)
 */
-fn x_den(x: Secpk1Fq, x_2: Secpk1Fq) -> Secpk1Fq {
-    let k2_0 = Secpk1Fq::from_le_bytes(get_k_2_0());
-    let k2_1 = Secpk1Fq::from_le_bytes(get_k_2_1());
+fn x_den(x: Fq, x_2: Fq) -> Fq {
+    let k2_0 = BigNum::from_array(k_2_0());
+    let k2_1 = BigNum::from_array(k_2_1());
     x_2 + k2_1 * x + k2_0
 }
 
@@ -32,11 +33,11 @@ k_(3,2) * x'^2 +
 k_(3,1) * x' +
 k_(3,0)
 */
-fn y_num(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
-    let k3_0 = Secpk1Fq::from_le_bytes(get_k_3_0());
-    let k3_1 = Secpk1Fq::from_le_bytes(get_k_3_1());
-    let k3_2 = Secpk1Fq::from_le_bytes(get_k_3_2());
-    let k3_3 = Secpk1Fq::from_le_bytes(get_k_3_3());
+fn y_num(x: Fq, x_2: Fq, x_3: Fq) -> Fq {
+    let k3_0 = BigNum::from_array(k_3_0());
+    let k3_1 = BigNum::from_array(k_3_1());
+    let k3_2 = BigNum::from_array(k_3_2());
+    let k3_3 = BigNum::from_array(k_3_3());
     k3_0 + k3_1 * x + k3_2 * x_2 + k3_3 * x_3
 }
 
@@ -46,10 +47,10 @@ k_(4,2) * x'^2 +
 k_(4,1) * x' +
 k_(4,0)
 */
-fn y_den(x: Secpk1Fq, x_2: Secpk1Fq, x_3: Secpk1Fq) -> Secpk1Fq {
-    let k4_0 = Secpk1Fq::from_le_bytes(get_k_4_0());
-    let k4_1 = Secpk1Fq::from_le_bytes(get_k_4_1());
-    let k4_2 = Secpk1Fq::from_le_bytes(get_k_4_2());
+fn y_den(x: Fq, x_2: Fq, x_3: Fq) -> Fq {
+    let k4_0 = BigNum::from_array(k_4_0());
+    let k4_1 = BigNum::from_array(k_4_1());
+    let k4_2 = BigNum::from_array(k_4_2());
     k4_0 + k4_1 * x + k4_2 * x_2 + x_3
 }
 
@@ -74,108 +75,56 @@ pub fn iso_map(p: Point) -> Point {
 
 #[test]
 fn test_iso_map() {
-    let p = (Secpk1Fq::from_le_bytes(
-            &[
-        234, 37, 9, 54, 187, 229, 107, 235,
-        237, 49, 196, 35, 95, 174, 247, 160,
-        85, 100, 3, 87, 65, 16, 136, 148,
-        106, 65, 146, 45, 83, 206, 236, 141
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        74, 218, 165, 198, 134, 228, 97, 243,
-        190, 229, 69, 77, 46, 210, 19, 124,
-        166, 44, 107, 238, 93, 62, 19, 74,
-        189, 71, 104, 50, 28, 174, 73, 226
-    ]
-        ));
-
+    let p = (
+        BigNum::from_array([0xf7ae5f23c431edeb6be5bb360925ea, 0xce532d92416a9488104157036455a0, 0x8dec]), BigNum::from_array([0x13d22e4d45e5bef361e486c6a5da4a, 0xae1c326847bd4a133e5dee6b2ca67c, 0xe249])
+    );
     let actual_p = iso_map(p);
-
-    let expected_p = (Secpk1Fq::from_le_bytes(
-            &[
-        248, 159, 226, 176, 248, 57, 16, 215,
-        154, 253, 32, 122, 148, 42, 124, 230,
-        67, 118, 80, 123, 130, 94, 244, 92,
-        254, 0, 94, 26, 38, 109, 157, 248
-    ]
-        ), Secpk1Fq::from_le_bytes(
-            &[
-        87, 175, 108, 128, 252, 207, 29, 238,
-        28, 188, 99, 213, 54, 233, 28, 203,
-        170, 177, 172, 195, 198, 145, 173, 110,
-        23, 169, 52, 204, 224, 85, 56, 179
-    ]
-        ));
+    let expected_p = (
+        BigNum::from_array([0x7c2a947a20fd9ad71039f8b0e29ff8, 0x6d261a5e00fe5cf45e827b507643e6, 0xf89d]), BigNum::from_array([0x1ce936d563bc1cee1dcffc806caf57, 0x55e0cc34a9176ead91c6c3acb1aacb, 0xb338])
+    );
     assert(actual_p == expected_p);
 }
 
 // Constants
-fn get_k_1_0() -> [u8] {
-    [
-        199, 168, 170, 170, 141, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142
-    ]
+fn k_1_0() -> [Field; 3] {
+    [0xe38e38e38e38e38e38e38daaaaa8c7, 0xe38e38e38e38e38e38e38e38e38e38, 0x8e38]
 }
-fn get_k_1_1() -> [u8] {
-    [
-        129, 101, 124, 241, 68, 16, 255, 223, 146, 59, 246, 11, 252, 210, 149, 213, 197, 68, 253, 167, 206, 21, 243, 185, 213, 33, 195, 11, 200, 212, 211, 7
-    ]
+fn k_1_1() -> [Field; 3] {
+    [0x95d2fc0bf63b92dfff1044f17c6581, 0xd4c80bc321d5b9f315cea7fd44c5d5, 0x7d3]
 }
-fn get_k_1_2() -> [u8] {
-    [
-        98, 210, 157, 61, 181, 208, 203, 78, 49, 64, 124, 3, 68, 97, 80, 228, 236, 202, 37, 202, 222, 19, 164, 226, 230, 52, 242, 35, 141, 50, 76, 83
-    ]
+fn k_1_2() -> [Field; 3] {
+    [0x506144037c40314ecbd0b53d9dd262, 0x328d23f234e6e2a413deca25caece4, 0x534c]
 }
-fn get_k_1_3() -> [u8] {
-    [
-        140, 168, 170, 170, 141, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142, 227, 56, 142
-    ]
+fn k_1_3() -> [Field; 3] {
+    [0xe38e38e38e38e38e38e38daaaaa88c, 0xe38e38e38e38e38e38e38e38e38e38, 0x8e38]
 }
 
-fn get_k_2_0() -> [u8] {
-    [
-        155, 180, 30, 120, 69, 183, 230, 159, 125, 72, 248, 66, 149, 64, 205, 134, 221, 64, 182, 183, 203, 76, 163, 156, 138, 145, 148, 61, 25, 113, 87, 211
-    ]
+fn k_2_0() -> [Field; 3] {
+    [0xcd409542f8487d9fe6b745781eb49b, 0x71193d94918a9ca34ccbb7b640dd86, 0xd357]
 }
-fn get_k_2_1() -> [u8] {
-    [
-        20, 109, 140, 42, 97, 86, 42, 197, 187, 65, 94, 31, 100, 107, 211, 6, 84, 34, 84, 27, 213, 178, 196, 247, 29, 220, 131, 67, 246, 198, 173, 237
-    ]
+fn k_2_1() -> [Field; 3] {
+    [0xd36b641f5e41bbc52a56612a8c6d14, 0xc6f64383dc1df7c4b2d51b54225406, 0xedad]
 }
 
-fn get_k_3_0() -> [u8] {
-    [
-        60, 226, 56, 142, 75, 104, 47, 161, 189, 132, 246, 18, 218, 75, 104, 47, 161, 189, 132, 246, 18, 218, 75, 104, 47, 161, 189, 132, 246, 18, 218, 75
-    ]
+fn k_3_0() -> [Field; 3] {
+    [0x684bda12f684bda12f684b8e38e23c, 0x12f684bda12f684bda12f684bda12f, 0x4bda]
 }
-fn get_k_3_1() -> [u8] {
-    [
-        163, 113, 29, 32, 252, 144, 252, 223, 111, 218, 134, 214, 70, 176, 122, 100, 213, 166, 160, 18, 75, 165, 208, 169, 15, 124, 203, 213, 50, 12, 94, 199
-    ]
+fn k_3_1() -> [Field; 3] {
+    [0x7ab046d686da6fdffc90fc201d71a3, 0xc32d5cb7c0fa9d0a54b12a0a6d564, 0xc75e]
 }
-fn get_k_3_2() -> [u8] {
-    [
-        49, 233, 206, 158, 90, 232, 101, 167, 24, 32, 190, 1, 162, 48, 40, 114, 118, 229, 18, 101, 239, 9, 82, 113, 115, 26, 249, 145, 70, 25, 166, 41
-    ]
+fn k_3_2() -> [Field; 3] {
+    [0x2830a201be2018a765e85a9ecee931, 0x194691f91a73715209ef6512e57672, 0x29a6]
 }
-fn get_k_3_3() -> [u8] {
-    [
-        132, 141, 227, 56, 47, 161, 189, 132, 246, 18, 218, 75, 104, 47, 161, 189, 132, 246, 18, 218, 75, 104, 47, 161, 189, 132, 246, 18, 218, 75, 104, 47
-    ]
+fn k_3_3() -> [Field; 3] {
+    [0xa12f684bda12f684bda12f38e38d84, 0x4bda12f684bda12f684bda12f684bd, 0x2f68]
 }
 
-fn get_k_4_0() -> [u8] {
-    [
-        59, 249, 255, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
-    ]
+fn k_4_0() -> [Field; 3] {
+    [0xfffffffffffffffffffffefffff93b, 0xffffffffffffffffffffffffffffff, 0xffff]
 }
-fn get_k_4_1() -> [u8] {
-    [
-        115, 37, 92, 104, 210, 37, 180, 223, 120, 217, 232, 200, 191, 193, 103, 148, 152, 194, 34, 39, 99, 230, 233, 213, 159, 180, 189, 184, 75, 83, 6, 122
-    ]
+fn k_4_1() -> [Field; 3] {
+    [0x67c1bfc8e8d978dfb425d2685c2573, 0x534bb8bdb49fd5e9e6632722c29894, 0x7a06]
 }
-fn get_k_4_2() -> [u8] {
-    [
-        111, 167, 210, 191, 146, 129, 191, 167, 153, 98, 13, 47, 22, 33, 61, 10, 126, 51, 254, 168, 63, 12, 167, 243, 44, 202, 69, 101, 113, 170, 132, 100
-    ]
+fn k_4_2() -> [Field; 3] {
+    [0x3d21162f0d6299a7bf8192bfd2a76f, 0xaa716545ca2cf3a70c3fa8fe337e0a, 0x6484]
 }

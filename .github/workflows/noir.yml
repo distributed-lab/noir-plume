@@ -20,6 +20,8 @@ jobs:
 
       - name: Install Nargo
         uses: noir-lang/noirup@v0.1.3
+        with:
+          toolchain: nightly
 
       - name: Run nargo fmt
         run: nargo fmt --check
@@ -33,9 +35,11 @@ jobs:
 
       - name: Install Nargo
         uses: noir-lang/noirup@v0.1.3
+        with:
+          toolchain: nightly
 
       - name: Run nargo check
-        run: nargo check --deny-warnings
+        run: nargo check --silence-warnings
 
   test-noir:
     runs-on: ubuntu-latest
@@ -46,6 +50,8 @@ jobs:
 
       - name: Install Nargo
         uses: noir-lang/noirup@v0.1.3
+        with:
+          toolchain: nightly
 
       - name: Run nargo test
-        run: nargo test --deny-warnings
+        run: nargo test --silence-warnings

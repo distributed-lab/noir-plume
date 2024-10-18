@@ -30,5 +30,5 @@ Install SageMath by following [these instructions](https://doc.sagemath.org/html
 Select the version of plume you want to run: either "v1" or "v2", then the number of bytes for msg (non-negative number) and run `main.sage` supplying these as CLI arguments, for example:
 
 ```bash
-sage main.sage v2 5
+sage main.sage v2 32
 ```

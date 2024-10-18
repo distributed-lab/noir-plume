@@ -1,25 +1,21 @@
-use std::bigint::Secpk1Fq;
+use bignum::BigNum;
 use crate::expand_message_xmd::expand_message_xmd;
+use crate::constants::Fq;
 use crate::ec_ops::Point;
-use crate::utils::{rev_bytes_48, to_u8_arr};
 
-fn bytes_to_registers(ui: [u8; 48]) -> Secpk1Fq {
-    let ui = rev_bytes_48(ui);
-
-    // 2^128
-    let temp = Secpk1Fq::from_le_bytes(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-    let mut small = [0 as u8; 16];
+fn bytes_to_registers(ui: [u8; 48]) -> Fq {
+    let shift = BigNum::from_array([0, 0x100, 0]);
+    let mut small = [0 as u8; 32];
     let mut big = [0 as u8; 32];
 
     for i in 0..16 {
-        small[i] = ui[i];
+        small[i+16] = ui[i+32];
     }
     for i in 0..32 {
-        big[i] = ui[i+16];
+        big[i] = ui[i];
     }
-
-    let mut res = Secpk1Fq::from_le_bytes(to_u8_arr(big));
-    res * temp + Secpk1Fq::from_le_bytes(to_u8_arr(small))
+    let res = BigNum::from_be_bytes(big);
+    res * shift + BigNum::from_be_bytes(small)
 }
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-hashing-to-a-finite-field
@@ -48,14 +44,7 @@ fn test_u0_bytes_to_registers() {
     ];
 
     let u0_bytes_to_registers = bytes_to_registers(u0_bytes);
-    let expected_u0_bytes_to_registers = Secpk1Fq::from_le_bytes(
-        &[
-        97, 43, 138, 176, 151, 243, 115, 72,
-        138, 225, 103, 71, 84, 31, 73, 62,
-        244, 209, 206, 148, 223, 59, 30, 96,
-        247, 161, 121, 54, 93, 171, 138, 18
-    ]
-    );
+    let expected_u0_bytes_to_registers = BigNum::from_array([0x491f544767e18a4873f397b08a2b61, 0xab5d3679a1f7601e3bdf94ced1f43e, 0x128a]);
     assert(u0_bytes_to_registers == expected_u0_bytes_to_registers);
 }
 
@@ -68,13 +57,6 @@ fn test_u1_bytes_to_registers() {
     ];
 
     let u1_bytes_to_registers = bytes_to_registers(u1_bytes);
-    let expected_u1_bytes_to_registers = Secpk1Fq::from_le_bytes(
-        &[
-        0, 158, 104, 228, 242, 160, 170, 77,
-        4, 139, 81, 3, 106, 231, 27, 83,
-        220, 149, 200, 117, 204, 253, 208, 19,
-        168, 149, 181, 163, 93, 182, 151, 88
-    ]
-    );
+    let expected_u1_bytes_to_registers = BigNum::from_array([0x1be76a03518b044daaa0f2e4689e00, 0xb65da3b595a813d0fdcc75c895dc53, 0x5897]);
     assert(u1_bytes_to_registers == expected_u1_bytes_to_registers);
 }

@@ -1,14 +1,7 @@
-.PHONY: fmt check execute prove prove_ultra_honk verify verify_ultra_honk zk zk_ultra_honk
-
-fmt:
-	nargo fmt
-
-check:
-	nargo check
+.PHONY: execute prove prove_ultra_honk verify write_vk_ultra_honk verify_ultra_honk write_vk verify zk zk_ultra_honk
 
 execute:
-	nargo execute plume
-
+	nargo execute plume --silence-warnings
 
 prove_ultra_honk:
 	bb prove_ultra_honk -b ./target/use.json -w ./target/plume.gz -o ./target/proof
@@ -16,13 +9,16 @@ prove_ultra_honk:
 prove:
 	bb prove -b ./target/use.json -w ./target/plume.gz -o ./target/proof
 
+write_vk_ultra_honk:
+	bb write_vk_ultra_honk -b ./target/use.json -o ./target/vk
 
 verify_ultra_honk:
-	bb write_vk_ultra_honk -b ./target/use.json -o ./target/vk
 	bb verify_ultra_honk -k ./target/vk -p ./target/proof
 
-verify:
+write_vk:
 	bb write_vk -b ./target/use.json -o ./target/vk
+
+verify:
 	bb verify -k ./target/vk -p ./target/proof
 
 
