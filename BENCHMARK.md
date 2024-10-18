@@ -10,7 +10,7 @@ _Maximum RAM consumption_: `200 GB`
 
 ## Table
 
-| Version | Message Length | Constraints | Execution Time     | Proving Time       | Writing VK Time    | Verifying Time | Proving Ultra Honk Time | Writing Vk Ultra Honk Time | Verifying Ultra Honk Time |
+| Version | Message Length | Constraints | Execution Time | Proving Ultra Plonk Time | Writing VK Ultra Plonk Time | Verifying Ultra Plonk Time | Proving Ultra Honk Time | Writing Vk Ultra Honk Time | Verifying Ultra Honk Time |
 |---------|----------------|-------------|--------------------|--------------------|--------------------|----------------|-------------------------|----------------------------|---------------------------|
 | v1      | 32             | 696,838   | 54 minutes 36 seconds | 2 minutes 18 seconds | 2 minutes 6 seconds | 0.07 seconds | 1 minute 2 seconds | 53 seconds | 0.1 seconds |
 | v2      | 32             | 696,184   | 54 minutes 50 seconds | 2 minutes 13 seconds | 2 minutes 2 seconds | 0.07 seconds   | 1 minute 5 seconds | 53 seconds | 0.09 seconds |
