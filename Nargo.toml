@@ -1,2 +1,11 @@
-[workspace]
-members = ["crates/plume", "crates/use", "crates/ec_ops_test"]
+[package]
+name = "ec_ops"
+type = "bin"
+authors = ["Distributed Lab"]
+license = "MIT"
+description = "Elliptic Curve Operations with different implementations."
+compiler_version = ">=0.35.0"
+
+[dependencies]
+bignum = {tag = "v0.3.7", git = "https://github.com/noir-lang/noir-bignum"}
+noir_bigcurve = {tag = "v0.4", git = "https://github.com/noir-lang/noir_bigcurve"}

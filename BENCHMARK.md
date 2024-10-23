@@ -1,69 +1,91 @@
-# PLUME Benchmark
-
-> Computational statistics.
-
-## Ec Ops Test
-
-_Nargo_: `0.35.0`
-
-_Barrettenberg_: `0.56.0`
-
-_old ec ops_: `255673` ACIR Opcodes, `0` Brillig Opcodes
-
-### new ec ops
-
-| Function | ACIR Opcodes | Brillig Opcodes |
-| -------- | ------------ | --------------- |
-| old ec ops | 255673 | 0 |
-| new ec ops | 35870 | 13693 |
-| __mul | N/A | 2293 |
-| __compute_quadratic_expression_with_borrow_flags | N/A | 3595 |
-| __div | N/A | 6814 |
-| __sub_with_flags | N/A | 991 |
+# Benchmark
 
 ## Environment
 
-_Machine:_ `20 Cores, 144 GB RAM`
+### Machine
 
-_Nargo:_ `0.33.0`
+MacBook Pro M2 MAX 32 GB RAM 1 TB storage
 
-_Barrettenberg:_ `0.47.1`
+### Nargo
 
-_Maximum RAM consumption_: `43 GB`
+```bash
+nargo --version
 
-## Table (Ultra Honk)
+nargo version = 0.35.0
+noirc version = 0.35.0+51ae1b324cd73fdb4fe3695b5d483a44b4aff4a9
+(git version hash: 51ae1b324cd73fdb4fe3695b5d483a44b4aff4a9, is dirty: false)
+```
 
-| Version | Message Length | Constraints | Execution Time     | Proving Time       | Writing VK Time    | Verifying Time |
-|---------|----------------|-------------|--------------------|--------------------|--------------------|----------------|
-| v1      | 5              | 2,998,712   | 13 minute 56 seconds | 13 minutes 23 seconds | 12 minutes 3 seconds | 0.06 seconds   |
-| v2      | 5              | 2,998,520   | 13 minutes 52 seconds | 13 minutes 9 seconds | 12 minutes 14 seconds | 0.06 seconds |
-| v1      | 32             | 2,998,905   | 14 minutes 14 seconds | 13 minutes 3 seconds | 11 minutes 44 seconds | 0.06 seconds |
-| v2      | 32             | 2,998,636   | 14 minutes 5 seconds | 12 minutes 55 seconds | 11 minutes 48 seconds | 0.06 seconds   |
-| v1      | 100            | 2,999,162   | 14 minutes 44 seconds | 13 minutes 4 seconds | 12 minutes 30 seconds | 0.06 seconds   |
-| v2      | 100            | 2,998,893   | 13 minutes 58 seconds | 12 minutes 57 seconds | 12 minutes 2 seconds | 0.06 seconds   |
-| v1      | 10000          | 3,036,441   | 17 minutes 47 seconds | 13 minutes 35 seconds | 12 minutes 13 seconds | 0.06 seconds   |
-| v2      | 10000          | 3,036,172   | 1 minutes 16 seconds | 13 minutes 59 seconds | 12 minutes 25 seconds | 0.06 seconds   |
+### Barrettenberg
 
+```bash
+bb --version
 
-## Environment
+0.56.0
+```
 
-_Machine_: `20 Cores, 144 GB RAM`
+## Native Scalar Multiplication
 
-_Nargo_: `0.32.0`
+ACIR opcodes: 255449
 
-_Barrettenberg_: `0.46.1`
+Brillig opcodes: 0
 
-_Maximum RAM consumption_: `123 GB`
+nargo check: 0.293 seconds
 
-## Table (Ultra Plonk)
+nargo execute --force: 5.729 seconds
 
-| Version | Message Length | Constraints | Execution Time     | Proving Time       | Writing VK Time    | Verifying Time |
-|---------|----------------|-------------|--------------------|--------------------|--------------------|----------------|
-| v1      | 5              | 2,998,712   | 15 minute 59 seconds | 53 minutes 15 seconds | 37 minutes 19 seconds | 0.1 seconds   |   
-| v2      | 5              | 2,998,520   | 18 minutes 32 seconds | 58 minutes 42 seconds | 36 minutes 25 seconds | 0.1 seconds | 
-| v1      | 32             | 2,998,905   | 17 minutes 34 seconds | 53 minutes 38 seconds | 36 minutes 43 seconds | 0.11 seconds | 
-| v2      | 32             | 2,998,636   | 17 minutes 9 seconds | 50 minutes 17 seconds | 38 minutes 59 seconds | 0.14 seconds   |
-| v1      | 100            | 2,999,162   | 16 minutes 49 seconds | 24 minutes 9 seconds | 22 minutes 58 seconds | 0.06 seconds   |
-| v2      | 100            | 2,998,893   | 16 minutes 28 seconds | 30 minutes 11 seconds | 25 minutes 14 seconds | 0.07 seconds   |
-| v1      | 10000          | 3,036,441   | 23 minutes 55 seconds | 38 minutes 18 seconds | 32 minutes 19 seconds | 0.08 seconds   |
-| v2      | 10000          | 3,036,172   | 20 minutes 35 seconds | 28 minutes 46 seconds | 30 minutes 40 seconds | 0.07 seconds   |
+bb prove: 41.769 seconds
+
+bb write_vk: 36.720 seconds
+
+bb verify: 0.053 seconds
+
+bb prove_ultra_honk: 18.856 seconds
+
+bb write_vk_ultra_honk: 14.975 seconds
+
+bb verify_ultra_honk: 0.06 seconds
+
+## BigNum Scalar Multiplication
+
+ACIR opcodes: 35646
+
+Brillig opcodes: 13504
+
+nargo check: 0.217 seconds
+
+nargo execute --force: 2 minutes 1.06 seconds
+
+bb prove: 1.666 seconds
+
+bb write_vk: 1.478 seconds
+
+bb verify: 0.053 seconds
+
+bb prove_ultra_honk: 0.910 seconds
+
+bb write_vk_ultra_honk: 0.716 seconds
+
+bb verify_ultra_honk: 0.062 seconds
+
+## BigCurve Scalar Multiplication
+
+ACIR opcodes: 22203
+
+Brillig opcodes: 270071
+
+nargo check: 0.993 seconds
+
+nargo execute --force: 13.312 seconds
+
+bb prove: 1.1 seconds
+
+bb write_vk: 1.129 seconds
+
+bb verify: 0.052 seconds
+
+bb prove_ultra_honk: 0.747 seconds
+
+bb write_vk_ultra_honk: 0.659 seconds
+
+bb verify_ultra_honk: 0.058 seconds

@@ -46,7 +46,7 @@ fn point_mul(scalar: [u8; 32], mut p: Point) -> Point {
     res
 }
 
-pub fn test_new_point_mul() {
+pub fn test_point_mul() {
     let p = (
         BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
     );

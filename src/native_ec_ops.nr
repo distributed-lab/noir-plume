@@ -45,7 +45,7 @@ fn point_mul(scalar: [u8; 32], mut p: Point) -> Point {
     res
 }
 
-pub fn test_old_point_mul() {
+pub fn test_point_mul() {
     let p = (Secpk1Fq::from_le_bytes(
             &[
         101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
