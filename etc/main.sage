@@ -46,8 +46,8 @@ def update_prover_toml(filepath, version1: bool, msg_len: int):
 def update_plume_version(is_v1: bool):
     path = "../crates/use/src/"
     # start from line 0
-    p1_line = 9
-    p2_line = 10
+    p1_line = 27
+    p2_line = 28
 
     with open(path + 'main.nr', 'r') as file:
         lines = file.readlines()
@@ -64,14 +64,14 @@ def update_plume_version(is_v1: bool):
 
 
 def update_MSG_LEN_variable(msg_len: int):
-    path = "../crates/plume/src/"
-    with open(path + 'constants.nr', 'r') as file:
+    path = "../crates/use/src/"
+    with open(path + 'main.nr', 'r') as file:
         lines = file.readlines()
     
-    MSG_LEN_line = 5
+    MSG_LEN_line = 7
     lines[MSG_LEN_line] = f"global MSG_LEN: u32 = {msg_len};\n"
 
-    with open(path + 'constants.nr', 'w') as file:
+    with open(path + 'main.nr', 'w') as file:
         file.writelines(lines)
 
 

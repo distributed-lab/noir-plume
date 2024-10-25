@@ -1,27 +1,34 @@
+/*
+    secp256k1_XMD:SHA-256_SSWU_RO_
+    
+    Based on the code from the link below:
+    
+    https://github.com/geometryxyz/secp256k1_hash_to_curve
+*/
+
+use noir_bigcurve::curves::secp256k1::Secp256k1;
+
 use crate::hash_to_field::hash_to_field;
 use crate::map_to_curve::map_to_curve;
 use crate::iso_map::iso_map;
-use crate::ec_ops::{Point, point_add};
 
-// Based on https://github.com/geometryxyz/secp256k1_hash_to_curve code
-pub fn hash_to_curve<let N: u32>(msg: [u8; N]) -> Point {
+pub fn hash_to_curve<let N: u32>(msg: [u8; N]) -> Secp256k1 {
     let u = hash_to_field(msg);
 
-    let q0 = map_to_curve(u.0);
-    let q1 = map_to_curve(u.1);
+    let q0 = map_to_curve(u.x);
+    let q1 = map_to_curve(u.y);
 
-    point_add(iso_map(q0), iso_map(q1))
+    iso_map(q0) + iso_map(q1)
 }
 
-/*
-// These test cases are commented out because they depend on the PLUME_MSG_LEN constant.
-// If the msg.len() in test case is not equal to PLUME_MSG_LEN, then it Failed
+// Data for test cases is taken from the link below:
+// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-secp256k1_xmdsha-256_sswu_r
 
-// Test cases are taken from https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-secp256k1_xmdsha-256_sswu_r
 #[test]
 fn test_hash_to_curve_for_empty_msg() {
     let msg = [];
-    let (px, py) = hash_to_curve(msg);
+
+    let actual_p = hash_to_curve(msg);
 
     let expected_px = [
         70, 19, 235, 223, 45, 133, 181, 183,
@@ -35,14 +42,16 @@ fn test_hash_to_curve_for_empty_msg() {
         109, 175, 148, 42, 2, 139, 240, 38,
         97, 17, 174, 7, 142, 103, 250, 100
     ];
-    assert(px.to_le_bytes() == expected_px);
-    assert(py.to_le_bytes() == expected_py);
+
+    assert(actual_p.x.to_le_bytes() == expected_px);
+    assert(actual_p.y.to_le_bytes() == expected_py);
 }
 
 #[test]
 fn test_hash_to_curve_for_msg_abc() {
-    let msg = [97, 98, 99];
-    let (px, py) = hash_to_curve(msg);
+    let msg = [97, 98, 99]; // "abc"
+
+    let actual_p = hash_to_curve(msg);
 
     let expected_px = [
         75, 44, 203, 179, 31, 241, 159, 189,
@@ -56,15 +65,16 @@ fn test_hash_to_curve_for_msg_abc() {
         224, 190, 177, 1, 42, 56, 77, 4,
         209, 235, 239, 51, 15, 137, 149, 127
     ];
-    assert(px.to_le_bytes() == expected_px);
-    assert(py.to_le_bytes() == expected_py);
+
+    assert(actual_p.x.to_le_bytes() == expected_px);
+    assert(actual_p.y.to_le_bytes() == expected_py);
 }
 
 #[test]
 fn test_hash_to_curve_for_msg_abcdef0123456789() {
-    // msg.len() = 16
     let msg = [97, 98, 99, 100, 101, 102, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57];
-    let (px, py) = hash_to_curve(msg);
+
+    let actual_p = hash_to_curve(msg);
 
     let expected_px = [
         58, 14, 75, 103, 208, 36, 179, 72,
@@ -78,13 +88,13 @@ fn test_hash_to_curve_for_msg_abcdef0123456789() {
         64, 156, 56, 244, 252, 96, 139, 80,
         196, 195, 212, 133, 96, 71, 54, 68
     ];
-    assert(px.to_le_bytes() == expected_px);
-    assert(py.to_le_bytes() == expected_py);
+
+    assert(actual_p.x.to_le_bytes() == expected_px);
+    assert(actual_p.y.to_le_bytes() == expected_py);
 }
 
 #[test]
 fn test_hash_to_curve_for_msg_q128() {
-    // msg.len() = 133
     let msg = [
         113, 49, 50, 56, 95, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
         113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
@@ -97,7 +107,8 @@ fn test_hash_to_curve_for_msg_q128() {
         113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
         113, 113, 113, 113, 113, 113
     ];
-    let (px, py) = hash_to_curve(msg);
+
+    let actual_p = hash_to_curve(msg);
 
     let expected_px = [
         233, 144, 24, 228, 2, 177, 114, 127,
@@ -111,13 +122,13 @@ fn test_hash_to_curve_for_msg_q128() {
         118, 100, 213, 124, 54, 79, 237, 255,
         103, 88, 195, 92, 217, 29, 64, 242
     ];
-    assert(px.to_le_bytes() == expected_px);
-    assert(py.to_le_bytes() == expected_py);
+
+    assert(actual_p.x.to_le_bytes() == expected_px);
+    assert(actual_p.y.to_le_bytes() == expected_py);
 }
 
 #[test]
 fn test_hash_to_curve_for_msg_a512() {
-    // msg.len() = 517
     let msg = [
         97, 53, 49, 50, 95, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
         97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
@@ -146,7 +157,8 @@ fn test_hash_to_curve_for_msg_a512() {
         97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
         97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97
     ];
-    let (px, py) = hash_to_curve(msg);
+
+    let actual_p = hash_to_curve(msg);
 
     let expected_px = [
         152, 201, 183, 140, 31, 140, 253, 230,
@@ -160,7 +172,8 @@ fn test_hash_to_curve_for_msg_a512() {
         204, 33, 34, 38, 78, 210, 169, 86,
         47, 241, 27, 24, 182, 238, 70, 132
     ];
-    assert(px.to_le_bytes() == expected_px);
-    assert(py.to_le_bytes() == expected_py);
+
+    assert(actual_p.x.to_le_bytes() == expected_px);
+    assert(actual_p.y.to_le_bytes() == expected_py);
 }
-*/
+

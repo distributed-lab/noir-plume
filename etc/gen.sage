@@ -40,9 +40,14 @@ def plume_generate_test_case(version1: bool, msg_len: int):
     c.reverse()
 
     s = (r + sk * bytes_to_num(c)) % SECP256K1_NUMBERS
+    s = num_to_bytes(int(s))
+    c.reverse()
+    s.reverse()
+
     Pk = point_to_be_bytes(Pk)
     N = point_to_be_bytes(N)
-    return (msg, c, num_to_bytes(int(s)), Pk, N)
+
+    return (msg, c, s, Pk, N)
 
 def point_to_be_bytes(p):
     return (num_to_bytes(int(p[0]))[::-1], num_to_bytes(int(p[1]))[::-1])
