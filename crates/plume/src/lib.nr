@@ -44,19 +44,14 @@ fn check_ec_equations<let N: u32>(
     let c: Secp256k1Scalar = ScalarField::from_bignum(c);
 
     let s_point = G.mul(s);
-    let r_point = a_div_b_pow_c(s_point, pk, c);
+    let r_point = s_point - pk.mul(c);
 
     let plume_msg = form_plume_msg(msg, pk);
     let hashed_to_curve = hash_to_curve(plume_msg);
     let h_pow_s = hashed_to_curve.mul(s);
-    let hashed_to_curve_r = a_div_b_pow_c(h_pow_s, nullifier, c);
+    let hashed_to_curve_r = h_pow_s - nullifier.mul(c);
 
     (r_point, hashed_to_curve_r, hashed_to_curve)
-}
-
-fn a_div_b_pow_c(a: Secp256k1, b: Secp256k1, c: Secp256k1Scalar) -> Secp256k1 {
-    let b_pow_c = b.mul(c);
-    a + b_pow_c.neg()
 }
 
 fn form_plume_msg<let N: u32>(msg: [u8; N], pk: Secp256k1) -> [u8; N + 33] {
@@ -203,7 +198,7 @@ fn test_r_point() {
     let pk = G.mul(sk);
     let s_point = G.mul(s);
 
-    let actual = a_div_b_pow_c(s_point, pk, c);
+    let actual = s_point - pk.mul(c);
 
     let expected: Secp256k1 = BigCurve {
         x: BigNum::from_be_bytes(
@@ -289,7 +284,7 @@ fn test_hashed_to_curve_r() {
     let nullifier = H.mul(sk);
     let h_pow_s = H.mul(s);
 
-    let actual = a_div_b_pow_c(h_pow_s, nullifier, c);
+    let actual = h_pow_s - nullifier.mul(c);
 
     let expected : Secp256k1 = BigCurve {
         x: BigNum::from_be_bytes(
