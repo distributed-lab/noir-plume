@@ -17,30 +17,15 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
-      - name: Cache Cargo Registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
 
-      - name: Cache Cargo Index
+      - name: Cache Nargo Binary
         uses: actions/cache@v4
+        id: nargo-cache
         with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('Cargo.lock') }}
+          path: ~/.nargo/bin/nargo
+          key: ${{ runner.os }}-nargo-binary
           restore-keys: |
-            ${{ runner.os }}-cargo-index-
-
-      - name: Cache Nargo Build
-        uses: actions/cache@v4
-        with:
-          path: ~/.nargo
-          key: ${{ runner.os }}-nargo-${{ hashFiles('Cargo.lock', 'noirup') }}
-          restore-keys: |
-            ${{ runner.os }}-nargo-
+            ${{ runner.os }}-nargo-binary
 
       - name: Create `.nargo/bin` directory
         shell: bash
@@ -49,6 +34,7 @@ jobs:
           echo "${HOME}/.nargo/bin" >> $GITHUB_PATH
 
       - name: Install Noir
+        if: steps.nargo-cache.outputs.cache-hit != 'true'
         run: |
           curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/noirup | bash -s -- \
                   -C 51ae1b324cd73fdb4fe3695b5d483a44b4aff4a9    
