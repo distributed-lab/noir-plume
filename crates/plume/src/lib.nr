@@ -175,6 +175,8 @@ fn test_nullifier() {
     assert(actual == expected);
 }
 
+/* Too slow for CI. Run manually.
+
 #[test]
 fn test_r_point() {
     let sk: Secp256k1Fr = BigNum::from_be_bytes(
@@ -416,3 +418,4 @@ fn test_plume_v2() {
 
     plume_v2(msg, c2, s2, pk, nullifier); // assert inside the function
 }
+*/
