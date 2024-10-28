@@ -10,6 +10,23 @@ use bignum::BigNum;
 use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fq};
 use noir_bigcurve::BigCurve;
 
+comptime global K1_0: Secp256k1Fq = BigNum::from_array([0xe38e38e38e38e38e38e38daaaaa8c7, 0xe38e38e38e38e38e38e38e38e38e38, 0x8e38]);
+comptime global K1_1: Secp256k1Fq = BigNum::from_array([0x95d2fc0bf63b92dfff1044f17c6581, 0xd4c80bc321d5b9f315cea7fd44c5d5, 0x7d3]);
+comptime global K1_2: Secp256k1Fq = BigNum::from_array([0x506144037c40314ecbd0b53d9dd262, 0x328d23f234e6e2a413deca25caece4, 0x534c]);
+comptime global K1_3: Secp256k1Fq = BigNum::from_array([0xe38e38e38e38e38e38e38daaaaa88c, 0xe38e38e38e38e38e38e38e38e38e38, 0x8e38]);
+
+comptime global K2_0: Secp256k1Fq = BigNum::from_array([0xcd409542f8487d9fe6b745781eb49b, 0x71193d94918a9ca34ccbb7b640dd86, 0xd357]);
+comptime global K2_1: Secp256k1Fq = BigNum::from_array([0xd36b641f5e41bbc52a56612a8c6d14, 0xc6f64383dc1df7c4b2d51b54225406, 0xedad]);
+
+comptime global K3_0: Secp256k1Fq = BigNum::from_array([0x684bda12f684bda12f684b8e38e23c, 0x12f684bda12f684bda12f684bda12f, 0x4bda]);
+comptime global K3_1: Secp256k1Fq = BigNum::from_array([0x7ab046d686da6fdffc90fc201d71a3, 0xc32d5cb7c0fa9d0a54b12a0a6d564, 0xc75e]);
+comptime global K3_2: Secp256k1Fq = BigNum::from_array([0x2830a201be2018a765e85a9ecee931, 0x194691f91a73715209ef6512e57672, 0x29a6]);
+comptime global K3_3: Secp256k1Fq = BigNum::from_array([0xa12f684bda12f684bda12f38e38d84, 0x4bda12f684bda12f684bda12f684bd, 0x2f68]);
+
+comptime global K4_0: Secp256k1Fq = BigNum::from_array([0xfffffffffffffffffffffefffff93b, 0xffffffffffffffffffffffffffffff, 0xffff]);
+comptime global K4_1: Secp256k1Fq = BigNum::from_array([0x67c1bfc8e8d978dfb425d2685c2573, 0x534bb8bdb49fd5e9e6632722c29894, 0x7a06]);
+comptime global K4_2: Secp256k1Fq = BigNum::from_array([0x3d21162f0d6299a7bf8192bfd2a76f, 0xaa716545ca2cf3a70c3fa8fe337e0a, 0x6484]);
+
 pub fn iso_map(p: Secp256k1) -> Secp256k1 {
     let x2 = p.x * p.x;
     let x3 = x2 * p.x;
@@ -26,64 +43,19 @@ pub fn iso_map(p: Secp256k1) -> Secp256k1 {
 }
 
 fn x_num(x: Secp256k1Fq, x2: Secp256k1Fq, x3: Secp256k1Fq) -> Secp256k1Fq {
-    k1_0() + k1_1() * x + k1_2() * x2 + k1_3() * x3
+    K1_0 + K1_1 * x + K1_2 * x2 + K1_3 * x3
 }
 
 fn x_den(x: Secp256k1Fq, x2: Secp256k1Fq) -> Secp256k1Fq {
-    x2 + k2_1() * x + k2_0()
+    x2 + K2_1 * x + K2_0
 }
 
 fn y_num(x: Secp256k1Fq, x2: Secp256k1Fq, x3: Secp256k1Fq) -> Secp256k1Fq {
-    k3_0() + k3_1() * x + k3_2() * x2 + k3_3() * x3
+    K3_0 + K3_1 * x + K3_2 * x2 + K3_3 * x3
 }
 
 fn y_den(x: Secp256k1Fq, x2: Secp256k1Fq, x3: Secp256k1Fq) -> Secp256k1Fq {
-    k4_0() + k4_1() * x + k4_2() * x2 + x3
-}
-
-// ****************** CONSTANTS ****************** //
-
-fn k1_0() -> Secp256k1Fq {
-    BigNum::from_array([0xe38e38e38e38e38e38e38daaaaa8c7, 0xe38e38e38e38e38e38e38e38e38e38, 0x8e38])
-}
-fn k1_1() -> Secp256k1Fq {
-    BigNum::from_array([0x95d2fc0bf63b92dfff1044f17c6581, 0xd4c80bc321d5b9f315cea7fd44c5d5, 0x7d3])
-}
-fn k1_2() -> Secp256k1Fq {
-    BigNum::from_array([0x506144037c40314ecbd0b53d9dd262, 0x328d23f234e6e2a413deca25caece4, 0x534c])
-}
-fn k1_3() -> Secp256k1Fq {
-    BigNum::from_array([0xe38e38e38e38e38e38e38daaaaa88c, 0xe38e38e38e38e38e38e38e38e38e38, 0x8e38])
-}
-
-fn k2_0() -> Secp256k1Fq {
-    BigNum::from_array([0xcd409542f8487d9fe6b745781eb49b, 0x71193d94918a9ca34ccbb7b640dd86, 0xd357])
-}
-fn k2_1() -> Secp256k1Fq {
-    BigNum::from_array([0xd36b641f5e41bbc52a56612a8c6d14, 0xc6f64383dc1df7c4b2d51b54225406, 0xedad])
-}
-
-fn k3_0() -> Secp256k1Fq {
-    BigNum::from_array([0x684bda12f684bda12f684b8e38e23c, 0x12f684bda12f684bda12f684bda12f, 0x4bda])
-}
-fn k3_1() -> Secp256k1Fq {
-    BigNum::from_array([0x7ab046d686da6fdffc90fc201d71a3, 0xc32d5cb7c0fa9d0a54b12a0a6d564, 0xc75e])
-}
-fn k3_2() -> Secp256k1Fq {
-    BigNum::from_array([0x2830a201be2018a765e85a9ecee931, 0x194691f91a73715209ef6512e57672, 0x29a6])
-}
-fn k3_3() -> Secp256k1Fq {
-    BigNum::from_array([0xa12f684bda12f684bda12f38e38d84, 0x4bda12f684bda12f684bda12f684bd, 0x2f68])
-}
-
-fn k4_0() -> Secp256k1Fq {
-    BigNum::from_array([0xfffffffffffffffffffffefffff93b, 0xffffffffffffffffffffffffffffff, 0xffff])
-}
-fn k4_1() -> Secp256k1Fq {
-    BigNum::from_array([0x67c1bfc8e8d978dfb425d2685c2573, 0x534bb8bdb49fd5e9e6632722c29894, 0x7a06])
-}
-fn k4_2() -> Secp256k1Fq {
-    BigNum::from_array([0x3d21162f0d6299a7bf8192bfd2a76f, 0xaa716545ca2cf3a70c3fa8fe337e0a, 0x6484])
+    K4_0 + K4_1 * x + K4_2 * x2 + x3
 }
 
 #[test]

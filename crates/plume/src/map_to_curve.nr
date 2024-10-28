@@ -10,19 +10,21 @@ use bignum::BigNum;
 use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fq, Secp256k1_Params};
 use noir_bigcurve::BigCurve;
 
+// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#section-8.7
+comptime global Z: Secp256k1Fq = BigNum::from_array([0xfffffffffffffffffffffefffffc24, 0xffffffffffffffffffffffffffffff, 0xffff]);
+comptime global A: Secp256k1Fq = BigNum::from_array([0x53d363cb6f0e5d405447c01a444533, 0x31abdd661adca08a5558f0f5d272e9, 0x3f87]);
+comptime global B: Secp256k1Fq = BigNum::from_array([0x6eb, 0, 0]);
+
+comptime global ONE: Secp256k1Fq = BigNum::one();
+
 // Returns point E' isogeneous to secp256k1.
 pub fn map_to_curve(u: Secp256k1Fq) -> Secp256k1 {
-    let a = a();
-    let b = b();
-    let z = z();
-    let one: Secp256k1Fq = BigNum::one();
+    let tv1 = ONE / (Z * Z * u * u * u * u + Z * u * u);
+    let x1 = (B.neg() / A) * (ONE + tv1);
 
-    let tv1 = one / (z * z * u * u * u * u + z * u * u);
-    let x1 = (b.neg() / a) * (one + tv1);
-
-    let gx1 = x1 * x1 * x1 + a * x1 + b;
-    let x2 = z * u * u * x1;
-    let gx2 = x2 * x2 * x2 + a * x2 + b;
+    let gx1 = x1 * x1 * x1 + A * x1 + B;
+    let x2 = Z * u * u * x1;
+    let gx2 = x2 * x2 * x2 + A * x2 + B;
     let (x, mut y) = select_xy(x1, x2, gx1, gx2);
 
     let ubyte: [u8; 32] = u.to_le_bytes();
@@ -64,28 +66,11 @@ fn select_xy(
     (x, y)
 }
 
-// ****************** CONSTANTS ****************** //
-// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#section-8.7
-
-fn z() -> Secp256k1Fq {
-    BigNum::from_array([0xfffffffffffffffffffffefffffc24, 0xffffffffffffffffffffffffffffff, 0xffff])
-}
-
-// Weierstrass equation `a` parameter for curve E' isogeneous to secp256k1.
-fn a() -> Secp256k1Fq {
-    BigNum::from_array([0x53d363cb6f0e5d405447c01a444533, 0x31abdd661adca08a5558f0f5d272e9, 0x3f87])
-}
-
-// Weierstrass equation `b` parameter for curve E' isogeneous to secp256k1.
-fn b() -> Secp256k1Fq {
-    BigNum::from_array([0x6eb, 0, 0])
-}
-
 #[test]
 fn test_inverse() {
     let value: Secp256k1Fq = BigNum::from_array([0x387936733e29cddb43759809208354, 0xc334daf72303fb27f6aad8201a9465, 0xc6f1]);
 
-    let actual = BigNum::one() / value;
+    let actual = ONE / value;
 
     let expected: [u8; 32] = [
         211, 142, 221, 78, 176, 90, 13, 18,

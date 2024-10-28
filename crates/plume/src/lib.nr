@@ -12,7 +12,7 @@ use noir_bigcurve::BigCurve;
 
 use crate::hash_to_curve::hash_to_curve;
 
-global G: Secp256k1 = BigCurve::one();
+comptime global G: Secp256k1 = BigCurve::one();
 
 // r*G - r_point
 // r*h - hashed_to_curve_r

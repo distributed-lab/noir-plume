@@ -8,6 +8,8 @@
 
 use std::hash::sha256;
 
+comptime global DST_PRIME: [u8; 50] = [81, 85, 85, 88, 45, 86, 48, 49, 45, 67, 83, 48, 50, 45, 119, 105, 116, 104, 45, 115, 101, 99, 112, 50, 53, 54, 107, 49, 95, 88, 77, 68, 58, 83, 72, 65, 45, 50, 53, 54, 95, 83, 83, 87, 85, 95, 82, 79, 95, 49];
+
 pub fn expand_message_xmd<let N: u32>(msg: [u8; N]) -> [u8; 96] {
     let b0 = msg_prime(msg);
     let b1 = hash_b(1, b0);
@@ -42,9 +44,8 @@ fn msg_prime<let N: u32>(msg: [u8; N]) -> [u8; 32] {
 
     preimage[64 + N + 2] = 0;
 
-    let dst_prime = dst_prime();
-    for i in 0..dst_prime.len() {
-        preimage[64 + N + 2 + 1 + i] = dst_prime[i];
+    for i in 0..50 {
+        preimage[64 + N + 2 + 1 + i] = DST_PRIME[i];
     }
 
     sha256(preimage)
@@ -71,23 +72,11 @@ fn hash_b(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
 
     preimage[32] = b_idx;
 
-    let dst_prime = dst_prime();
-    for i in 0..dst_prime.len() {
-        preimage[32 + 1 + i] = dst_prime[i];
+    for i in 0..50 {
+        preimage[32 + 1 + i] = DST_PRIME[i];
     }
 
     sha256(preimage)
-}
-
-// ****************** CONSTANTS ****************** //
-// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#name-expand_message_xmdsha-256
-
-fn dst_prime() -> [u8; 50] {
-    [
-        81, 85, 85, 88, 45, 86, 48, 49, 45, 67, 83, 48, 50, 45, 119, 105, 116,
-        104, 45, 115, 101, 99, 112, 50, 53, 54, 107, 49, 95, 88, 77, 68, 58,
-        83, 72, 65, 45, 50, 53, 54, 95, 83, 83, 87, 85, 95, 82, 79, 95, 49
-    ]
 }
 
 #[test]
