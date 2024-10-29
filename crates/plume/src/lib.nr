@@ -13,36 +13,39 @@ use noir_bigcurve::BigCurve;
 use crate::hash_to_curve::hash_to_curve;
 
 comptime global G: Secp256k1 = BigCurve::one();
+comptime global COMPRESSED_SIZE_BYTES: u32 = 33;
 
-// r*G - r_point
-// r*h - hashed_to_curve_r
-// sha256(G || Pk || H || N || r*G || r*H)
-pub fn plume_v1<let N: u32>(msg: [u8; N], c: [u8; 32], s: Secp256k1Scalar, pk: Secp256k1, nullifier: Secp256k1) {
+pub fn plume_v1<let N: u32>(
+    msg: [u8; N],
+    c: Secp256k1Scalar,
+    s: Secp256k1Scalar,
+    pk: Secp256k1,
+    nullifier: Secp256k1
+) -> [u8; 32] {
     let (r_point, hashed_to_curve_r, hashed_to_curve) = check_ec_equations(msg, c, s, pk, nullifier);
-    let actual_c = sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
 
-    assert(actual_c == c);
+    sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r)
 }
 
-// https://www.notion.so/mantanetwork/PLUME-Discussion-6f4b7e7cf63e4e33976f6e697bf349ff
-pub fn plume_v2<let N: u32>(msg: [u8; N], c2: [u8; 32], s2: Secp256k1Scalar, pk: Secp256k1, nullifier: Secp256k1) {
-    let (r_point, hashed_to_curve_r, _) = check_ec_equations(msg, c2, s2, pk, nullifier);
-    let actual_c2 = sha256_6_coordinates(nullifier, r_point, hashed_to_curve_r);
+pub fn plume_v2<let N: u32>(
+    msg: [u8; N],
+    c: Secp256k1Scalar,
+    s: Secp256k1Scalar,
+    pk: Secp256k1,
+    nullifier: Secp256k1
+) -> (Secp256k1, Secp256k1) {
+    let (r_point, hashed_to_curve_r, _) = check_ec_equations(msg, c, s, pk, nullifier);
 
-    assert(actual_c2 == c2);
+    (r_point, hashed_to_curve_r)
 }
 
-// Return values - r_point, hashed_to_curve_r, hashed_to_curve
 fn check_ec_equations<let N: u32>(
     msg: [u8; N],
-    c: [u8; 32],
+    c: Secp256k1Scalar,
     s: Secp256k1Scalar,
     pk: Secp256k1,
     nullifier: Secp256k1
 ) -> (Secp256k1, Secp256k1, Secp256k1) {
-    let c: Secp256k1Fr = BigNum::from_be_bytes(c);
-    let c: Secp256k1Scalar = ScalarField::from_bignum(c);
-
     let s_point = G.mul(s);
     let r_point = s_point - pk.mul(c);
 
@@ -54,36 +57,37 @@ fn check_ec_equations<let N: u32>(
     (r_point, hashed_to_curve_r, hashed_to_curve)
 }
 
-fn form_plume_msg<let N: u32>(msg: [u8; N], pk: Secp256k1) -> [u8; N + 33] {
-    let mut plume_msg = [0; N + 33]; // 33 bytes for compressed pk
+fn form_plume_msg<let N: u32>(msg: [u8; N], pk: Secp256k1) -> [u8; N + COMPRESSED_SIZE_BYTES] {
+    let mut plume_msg = [0; N + COMPRESSED_SIZE_BYTES];
 
     for i in 0..N {
         plume_msg[i] = msg[i];
     }
 
     let compressed_pk = compress_ec_point(pk);
-    for i in 0..33 {
+    for i in 0..COMPRESSED_SIZE_BYTES {
         plume_msg[N + i] = compressed_pk[i];
     }
 
     plume_msg
 }
 
-fn compress_ec_point(pk: Secp256k1) -> [u8; 33] {
-    let x: [u8; 32] = pk.x.to_le_bytes();
-    let mut compressed = [0 as u8; 33];
+fn compress_ec_point(p: Secp256k1) -> [u8; COMPRESSED_SIZE_BYTES] {
+    let x: [u8; 32] = p.x.to_le_bytes();
+    let mut compressed = [0 as u8; COMPRESSED_SIZE_BYTES];
 
-    let tmp: [u8; 32] = pk.y.to_le_bytes();
-    compressed[0] = (tmp[0] & 1) + 2;
+    let sign = p.y.to_le_bytes::<32>()[0] & 1;
+    compressed[0] = sign + 2; // convention to encode `y` as 02 or 03
 
     for i in 0..32 {
         compressed[32-i] = x[i];
     }
+
     compressed
 }
 
 fn sha256_12_coordinates(pk: Secp256k1, h: Secp256k1, nullifier: Secp256k1, gr: Secp256k1, hr: Secp256k1) -> [u8; 32] {
-    let mut compressed = [[0 as u8; 33]; 6];
+    let mut compressed = [[0 as u8; COMPRESSED_SIZE_BYTES]; 6];
     compressed[0] = compress_ec_point(G);
     compressed[1] = compress_ec_point(pk);
     compressed[2] = compress_ec_point(h);
@@ -92,28 +96,13 @@ fn sha256_12_coordinates(pk: Secp256k1, h: Secp256k1, nullifier: Secp256k1, gr: 
     compressed[5] = compress_ec_point(hr);
 
     // Concatenate
-    let mut res = [0 as u8; 198];
+    let mut res = [0 as u8; COMPRESSED_SIZE_BYTES * 6];
     for i in 0..6 {
-        for j in 0..33 {
-            res[i*33 + j] = compressed[i][j];
+        for j in 0..COMPRESSED_SIZE_BYTES {
+            res[i*COMPRESSED_SIZE_BYTES + j] = compressed[i][j];
         }
     }
-    sha256(res)
-}
 
-fn sha256_6_coordinates(nullifier: Secp256k1, gr: Secp256k1, hr: Secp256k1) -> [u8; 32] {
-    let mut compressed = [[0 as u8; 33]; 3];
-    compressed[0] = compress_ec_point(nullifier);
-    compressed[1] = compress_ec_point(gr);
-    compressed[2] = compress_ec_point(hr);
-
-    // Concatenate
-    let mut res = [0 as u8; 99];
-    for i in 0..3 {
-        for j in 0..33 {
-            res[i*33 + j] = compressed[i][j];
-        }
-    }
     sha256(res)
 }
 
@@ -347,9 +336,13 @@ fn test_plume_v1() {
     let msg = [
         65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103
     ];
+
     let c = [
         198, 167, 252, 44, 146, 109, 219, 175, 32, 115, 26, 71, 159, 182, 86, 111, 45, 170, 85, 20, 186, 174, 82, 35, 254, 59, 50, 237, 188, 232, 50, 84
     ];
+    let expected = c;
+    let c: Secp256k1Fr = BigNum::from_be_bytes(c);
+    let c: Secp256k1Scalar = ScalarField::from_bignum(c);
 
     let s: Secp256k1Fr = BigNum::from_be_bytes(
         [
@@ -375,7 +368,9 @@ fn test_plume_v1() {
 
     let nullifier = H.mul(sk);
 
-    plume_v1(msg, c, s, pk, nullifier); // assert inside the function
+    let actual = plume_v1(msg, c, s, pk, nullifier);
+
+    assert(expected == actual);
 }
 
 #[test]
@@ -383,9 +378,13 @@ fn test_plume_v2() {
     let msg = [
         65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103
     ];
+
     let c2 = [
         61, 191, 183, 23, 112, 80, 16, 212, 244, 74, 112, 114, 12, 149, 231, 75, 71, 91, 211, 167, 131, 171, 11, 158, 138, 107, 59, 54, 52, 52, 235, 150
     ];
+    let expected = c2;
+    let c2: Secp256k1Fr = BigNum::from_be_bytes(c2);
+    let c2: Secp256k1Scalar = ScalarField::from_bignum(c2);
 
     let s2: Secp256k1Fr = BigNum::from_be_bytes(
         [
@@ -411,6 +410,21 @@ fn test_plume_v2() {
 
     let nullifier = H.mul(sk);
 
-    plume_v2(msg, c2, s2, pk, nullifier); // assert inside the function
+    let (r_point, hashed_to_curve_r) = plume_v2(msg, c2, s2, pk, nullifier);
+
+    let mut compressed = [[0 as u8; COMPRESSED_SIZE_BYTES]; 3];
+    compressed[0] = compress_ec_point(nullifier);
+    compressed[1] = compress_ec_point(r_point);
+    compressed[2] = compress_ec_point(hashed_to_curve_r);
+
+    let mut res = [0 as u8; COMPRESSED_SIZE_BYTES * 3];
+    for i in 0..3 {
+        for j in 0..COMPRESSED_SIZE_BYTES {
+            res[i*COMPRESSED_SIZE_BYTES + j] = compressed[i][j];
+        }
+    }
+    let actual = sha256(res);
+
+    assert(expected == actual);
 }
 */

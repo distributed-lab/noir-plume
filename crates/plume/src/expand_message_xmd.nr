@@ -81,7 +81,7 @@ fn hash_b(b_idx: u8, b: [u8; 32]) -> [u8; 32] {
 
 #[test]
 fn test_b0() {
-    let msg = [97, 98, 99]; // "abc" 
+    let msg = [97, 98, 99];
 
     let actual_b0 = msg_prime(msg);
 
@@ -162,7 +162,7 @@ fn test_b3() {
 
 #[test]
 fn tests_expand_message_xmd() {
-    let msg = [97, 98, 99]; // "abc" 
+    let msg = [97, 98, 99];
 
     let actual = expand_message_xmd(msg);
 
