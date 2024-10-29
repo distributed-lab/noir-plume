@@ -23,7 +23,7 @@ def format_double_array(pk):
 def update_prover_toml(is_v1: bool, msg_len: int):
     prover_toml_path = "../crates/use_v2/Prover.toml"
     if is_v1:
-        path =  "../crates/use_v1/Prover.toml"
+        prover_toml_path =  "../crates/use_v1/Prover.toml"
 
     data = toml.load(prover_toml_path)
     (msg, c, s, pk, nullifier) = plume_generate_test_case(is_v1, msg_len)
