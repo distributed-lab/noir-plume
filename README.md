@@ -10,7 +10,7 @@ Plume is needed to confirm your identity without disclosing your private data, i
 
 ```toml
 [dependencies]
-plume = { git = "https://github.com/distributed-lab/noir-plume", tag = "v0.1.2", directory = "crates/plume"}
+plume = { git = "https://github.com/distributed-lab/noir-plume", tag = "v1.0.0", directory = "crates/plume"}
 ```
 
 ### Use in your `Noir` code as following
