@@ -19,7 +19,7 @@ def generate_random_r_sk_msg(msg_len: int):
     msg = os.urandom(msg_len)
     return (list(r), list(sk), list(msg))
 
-def plume_generate_test_case(version1: bool, msg_len: int):
+def plume_generate_test_case(is_v1: bool, msg_len: int):
     (r, sk, msg) = generate_random_r_sk_msg(msg_len)
     r = bytes_to_num(r)
     sk = bytes_to_num(sk)
@@ -33,16 +33,21 @@ def plume_generate_test_case(version1: bool, msg_len: int):
     Hp = E(H[0], H[1])
     N = (sk * Hp).xy()
 
-    if version1:
+    if is_v1:
         c = sha256_points([G, Pk, H, N, r*G, r*Hp])
     else:
         c = sha256_points([N, r*G, r*Hp])
     c.reverse()
 
     s = (r + sk * bytes_to_num(c)) % SECP256K1_NUMBERS
+    s = num_to_bytes(int(s))
+    c.reverse()
+    s.reverse()
+
     Pk = point_to_be_bytes(Pk)
     N = point_to_be_bytes(N)
-    return (msg, c, num_to_bytes(int(s)), Pk, N)
+
+    return (msg, c, s, Pk, N)
 
 def point_to_be_bytes(p):
     return (num_to_bytes(int(p[0]))[::-1], num_to_bytes(int(p[1]))[::-1])

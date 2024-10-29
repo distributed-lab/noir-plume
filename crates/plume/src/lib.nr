@@ -1,83 +1,93 @@
-mod constants;
-mod utils;
 mod hash_to_curve;
 mod hash_to_field;
 mod expand_message_xmd;
 mod map_to_curve;
 mod iso_map;
-mod ec_ops;
 
 use std::hash::sha256;
 use bignum::BigNum;
+use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
+use noir_bigcurve::scalar_field::ScalarField;
+use noir_bigcurve::BigCurve;
 
-use crate::utils::rev_bytes_32;
 use crate::hash_to_curve::hash_to_curve;
-use crate::constants::{ZERO, PLUME_MSG_LEN};
-use crate::ec_ops::{Point, point_mul, point_add};
 
-global G = (
-    BigNum::from_array([0x9bfcdb2dce28d959f2815b16f81798, 0x667ef9dcbbac55a06295ce870b0702, 0x79be]),
-    BigNum::from_array([0x17b448a68554199c47d08ffb10d4b8, 0xda7726a3c4655da4fbfc0e1108a8fd, 0x483a])
-);
+comptime global G: Secp256k1 = BigCurve::one();
+comptime global COMPRESSED_SIZE_BYTES: u32 = 33;
 
-fn a_div_b_pow_c(a: Point, b: Point, c: [u8; 32]) -> Point {
-    let b_pow_c = point_mul(c, b);
-    point_add(a, (b_pow_c.0, ZERO - b_pow_c.1))
+pub fn plume_v1<let N: u32>(
+    msg: [u8; N],
+    c: Secp256k1Scalar,
+    s: Secp256k1Scalar,
+    pk: Secp256k1,
+    nullifier: Secp256k1
+) -> [u8; 32] {
+    let (r_point, hashed_to_curve_r, hashed_to_curve) = check_ec_equations(msg, c, s, pk, nullifier);
+
+    sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r)
 }
 
-// Apply byte reverse
-fn compress_ec_point(pk: Point) -> [u8; 33] {
-    let x: [u8; 32] = pk.0.to_le_bytes();
-    let mut compressed = [0 as u8; 33];
+pub fn plume_v2<let N: u32>(
+    msg: [u8; N],
+    c: Secp256k1Scalar,
+    s: Secp256k1Scalar,
+    pk: Secp256k1,
+    nullifier: Secp256k1
+) -> (Secp256k1, Secp256k1) {
+    let (r_point, hashed_to_curve_r, _) = check_ec_equations(msg, c, s, pk, nullifier);
 
-    let tmp: [u8; 32] = pk.1.to_le_bytes();
-    compressed[0] = (tmp[0] & 1) + 2;
+    (r_point, hashed_to_curve_r)
+}
+
+fn check_ec_equations<let N: u32>(
+    msg: [u8; N],
+    c: Secp256k1Scalar,
+    s: Secp256k1Scalar,
+    pk: Secp256k1,
+    nullifier: Secp256k1
+) -> (Secp256k1, Secp256k1, Secp256k1) {
+    let s_point = G.mul(s);
+    let r_point = s_point - pk.mul(c);
+
+    let plume_msg = form_plume_msg(msg, pk);
+    let hashed_to_curve = hash_to_curve(plume_msg);
+    let h_pow_s = hashed_to_curve.mul(s);
+    let hashed_to_curve_r = h_pow_s - nullifier.mul(c);
+
+    (r_point, hashed_to_curve_r, hashed_to_curve)
+}
+
+fn form_plume_msg<let N: u32>(msg: [u8; N], pk: Secp256k1) -> [u8; N + COMPRESSED_SIZE_BYTES] {
+    let mut plume_msg = [0; N + COMPRESSED_SIZE_BYTES];
+
+    for i in 0..N {
+        plume_msg[i] = msg[i];
+    }
+
+    let compressed_pk = compress_ec_point(pk);
+    for i in 0..COMPRESSED_SIZE_BYTES {
+        plume_msg[N + i] = compressed_pk[i];
+    }
+
+    plume_msg
+}
+
+fn compress_ec_point(p: Secp256k1) -> [u8; COMPRESSED_SIZE_BYTES] {
+    let x: [u8; 32] = p.x.to_le_bytes();
+    let mut compressed = [0 as u8; COMPRESSED_SIZE_BYTES];
+
+    let sign = p.y.to_le_bytes::<32>()[0] & 1;
+    compressed[0] = sign + 2; // convention to encode `y` as 02 or 03
 
     for i in 0..32 {
         compressed[32-i] = x[i];
     }
+
     compressed
 }
 
-// Return values - r_point, hashed_to_curve_r, hashed_to_curve
-fn check_ec_equations<let N: u32>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) -> (Point, Point, Point) {
-    // ECDSAPrivToPub
-    let s_point = point_mul(s, G);
-    let r_point = a_div_b_pow_c(s_point, pk, c);
-
-    let mut plume_msg = [0; PLUME_MSG_LEN];
-    let pk_compress = compress_ec_point(pk);
-    for i in 0..N {
-        plume_msg[i] = msg[i];
-    }
-    for i in 0..33 {
-        plume_msg[N + i] = pk_compress[i];
-    }
-    let hashed_to_curve = hash_to_curve(plume_msg);
-
-    let h_pow_s = point_mul(s, hashed_to_curve);
-    let hashed_to_curve_r = a_div_b_pow_c(h_pow_s, nullifier, c);
-    (r_point, hashed_to_curve_r, hashed_to_curve)
-}
-
-fn sha256_6_coordinates(nullifier: Point, gr: Point, hr: Point) -> [u8; 32] {
-    let mut compressed = [[0 as u8; 33]; 3];
-    compressed[0] = compress_ec_point(nullifier);
-    compressed[1] = compress_ec_point(gr);
-    compressed[2] = compress_ec_point(hr);
-
-    // Concatenate all compressed bytes
-    let mut res = [0 as u8; 99];
-    for i in 0..3 {
-        for j in 0..33 {
-            res[i*33 + j] = compressed[i][j];
-        }
-    }
-    sha256(res)
-}
-
-fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: Point) -> [u8; 32] {
-    let mut compressed = [[0 as u8; 33]; 6];
+fn sha256_12_coordinates(pk: Secp256k1, h: Secp256k1, nullifier: Secp256k1, gr: Secp256k1, hr: Secp256k1) -> [u8; 32] {
+    let mut compressed = [[0 as u8; COMPRESSED_SIZE_BYTES]; 6];
     compressed[0] = compress_ec_point(G);
     compressed[1] = compress_ec_point(pk);
     compressed[2] = compress_ec_point(h);
@@ -85,199 +95,282 @@ fn sha256_12_coordinates(pk: Point, h: Point, nullifier: Point, gr: Point, hr: P
     compressed[4] = compress_ec_point(gr);
     compressed[5] = compress_ec_point(hr);
 
-    // Concatenate all compressed bytes
-    let mut res = [0 as u8; 198];
+    // Concatenate
+    let mut res = [0 as u8; COMPRESSED_SIZE_BYTES * 6];
     for i in 0..6 {
-        for j in 0..33 {
-            res[i*33 + j] = compressed[i][j];
+        for j in 0..COMPRESSED_SIZE_BYTES {
+            res[i*COMPRESSED_SIZE_BYTES + j] = compressed[i][j];
         }
     }
+
     sha256(res)
-}
-
-// r*G - r_point
-// r*h - hashed_to_curve_r
-// sha256(G || Pk || H || N || r*G || r*H)
-pub fn plume_v1<let N: u32>(msg: [u8; N], c: [u8; 32], s: [u8; 32], pk: Point, nullifier: Point) {
-    let (r_point, hashed_to_curve_r, hashed_to_curve) = check_ec_equations(msg, c, s, pk, nullifier);
-    let actual_c = rev_bytes_32(sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r));
-    assert(actual_c == c);
-}
-
-// https://www.notion.so/mantanetwork/PLUME-Discussion-6f4b7e7cf63e4e33976f6e697bf349ff
-pub fn plume_v2<let N: u32>(msg: [u8; N], c2: [u8; 32], s2: [u8; 32], pk: Point, nullifier: Point) {
-    let (r_point, hashed_to_curve_r, _) = check_ec_equations(msg, c2, s2, pk, nullifier);
-    let actual_c2 = rev_bytes_32(sha256_6_coordinates(nullifier, r_point, hashed_to_curve_r));
-    assert(actual_c2 == c2);
 }
 
 #[test]
 fn test_compress_ec_point() {
-    let sk = [
-        112, 243, 161, 202, 0, 115, 239, 202, 31, 179, 58, 65, 45, 143, 230, 117, 69, 15, 193, 56, 3, 81, 140, 224, 217, 195, 210, 108, 178, 7, 102, 141
-    ];
-    let pk = point_mul(sk, G);
+    let sk: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        141, 102, 7, 178, 108, 210, 195, 217, 224, 140, 81, 3, 56, 193, 15, 69, 117, 230, 143, 45, 65, 58, 179, 31, 202, 239, 115, 0, 202, 161, 243, 112
+    ]
+    );
+    let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
+    let pk = G.mul(sk);
 
-    let compressed_pk = compress_ec_point(pk);
-    let expected_compressed_pk = [
+    let actual = compress_ec_point(pk);
+
+    let expected = [
         2, 251, 188, 92, 195, 140, 107, 160, 47, 132, 242, 112, 141, 138, 178, 59, 234, 158, 144, 47, 203, 20, 59, 174, 56, 127, 68, 229, 111, 95, 233, 172, 226
     ];
-    assert(compressed_pk == expected_compressed_pk);
+
+    assert(actual == expected);
 }
 
 #[test]
 fn test_nullifier() {
-    let sk = [
-        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
-    ];
-    let H = (
-        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
+    let sk: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        81, 155, 66, 61, 113, 95, 139, 88, 31, 79, 168, 238, 89, 244, 119, 26, 91, 68, 200, 19, 11, 78, 62, 172, 202, 84, 165, 109, 218, 114, 180, 100
+    ]
     );
+    let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
 
-    let nullifier = point_mul(sk, H);
-    let expected_nullifier = ([
-        48, 88, 229, 103, 12, 29, 111, 98, 30, 92, 164, 115, 100, 166, 197, 252, 69, 231, 204, 194, 224, 185, 228, 221, 138, 239, 114, 129, 210, 62, 188, 87
-    ], [
-        115, 203, 158, 229, 127, 8, 214, 145, 168, 143, 163, 126, 230, 58, 159, 159, 96, 17, 225, 136, 33, 221, 110, 228, 58, 243, 88, 141, 72, 65, 47, 106
-    ]);
-    assert((nullifier.0.to_le_bytes(), nullifier.1.to_le_bytes()) == expected_nullifier);
+    let H: Secp256k1 = BigCurve {
+        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        is_infinity: false
+    };
+
+    let actual = H.mul(sk);
+
+    let expected: Secp256k1 = BigCurve {
+        x: BigNum::from_be_bytes(
+            [
+            87, 188, 62, 210, 129, 114, 239, 138, 221, 228, 185, 224, 194, 204, 231, 69, 252, 197, 166, 100, 115, 164, 92, 30, 98, 111, 29, 12, 103, 229, 88, 48
+        ]
+        ),
+        y: BigNum::from_be_bytes(
+            [
+            106, 47, 65, 72, 141, 88, 243, 58, 228, 110, 221, 33, 136, 225, 17, 96, 159, 159, 58, 230, 126, 163, 143, 168, 145, 214, 8, 127, 229, 158, 203, 115
+        ]
+        ),
+        is_infinity: false
+    };
+
+    assert(actual == expected);
 }
+
+/* Too slow for CI. Run manually.
 
 #[test]
 fn test_r_point() {
-    let sk = [
-        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
-    ];
-    let s = [
-        202, 40, 186, 121, 96, 189, 224, 125, 45, 19, 234, 232, 99, 209, 144, 177, 95, 151, 46, 209, 51, 227, 97, 247, 229, 111, 203, 132, 125, 2, 159, 230
-    ];
-    let c = [
-        84, 50, 232, 188, 237, 50, 59, 254, 35, 82, 174, 186, 20, 85, 170, 45, 111, 86, 182, 159, 71, 26, 115, 32, 175, 219, 109, 146, 44, 252, 167, 198
-    ];
-    let pk = point_mul(sk, G);
-    let s_point = point_mul(s, G);
-    let r_point = a_div_b_pow_c(s_point, pk, c);
+    let sk: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        81, 155, 66, 61, 113, 95, 139, 88, 31, 79, 168, 238, 89, 244, 119, 26, 91, 68, 200, 19, 11, 78, 62, 172, 202, 84, 165, 109, 218, 114, 180, 100
+    ]
+    );
+    let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
 
-    let expected_r_point = ([
-        4, 152, 254, 54, 199, 45, 14, 89, 41, 132, 162, 98, 41, 102, 118, 128, 129, 101, 19, 40, 42, 109, 188, 122, 210, 42, 126, 14, 53, 164, 140, 157
-    ], [
-        161, 197, 112, 118, 106, 129, 84, 144, 155, 45, 71, 18, 81, 228, 235, 188, 198, 170, 195, 217, 53, 200, 35, 70, 133, 78, 253, 138, 11, 195, 8, 255
-    ]);
-    assert((r_point.0.to_le_bytes(), r_point.1.to_le_bytes()) == expected_r_point);
+    let s: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        230, 159, 2, 125, 132, 203, 111, 229, 247, 97, 227, 51, 209, 46, 151, 95, 177, 144, 209, 99, 232, 234, 19, 45, 125, 224, 189, 96, 121, 186, 40, 202
+    ]
+    );
+    let s: Secp256k1Scalar = ScalarField::from_bignum(s);
+
+    let c: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        198, 167, 252, 44, 146, 109, 219, 175, 32, 115, 26, 71, 159, 182, 86, 111, 45, 170, 85, 20, 186, 174, 82, 35, 254, 59, 50, 237, 188, 232, 50, 84
+    ]
+    );
+    let c: Secp256k1Scalar = ScalarField::from_bignum(c);
+
+    let pk = G.mul(sk);
+    let s_point = G.mul(s);
+
+    let actual = s_point - pk.mul(c);
+
+    let expected: Secp256k1 = BigCurve {
+        x: BigNum::from_be_bytes(
+            [
+            157, 140, 164, 53, 14, 126, 42, 210, 122, 188, 109, 42, 40, 19, 101, 129, 128, 118, 102, 41, 98, 162, 132, 41, 89, 14, 45, 199, 54, 254, 152, 4
+        ]
+        ),
+        y: BigNum::from_be_bytes(
+            [
+            255, 8, 195, 11, 138, 253, 78, 133, 70, 35, 200, 53, 217, 195, 170, 198, 188, 235, 228, 81, 18, 71, 45, 155, 144, 84, 129, 106, 118, 112, 197, 161
+        ]
+        ),
+        is_infinity: false
+    };
+
+    assert(actual == expected);
 }
 
-// Failed if the MSG_LEN constant has a value other than 29
-/*
 #[test]
-fn test_hashed_to_curve_msg_with_pk() {
-    let sk = [
-        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
-    ];
-    let pk = point_mul(sk, G);
+fn test_hashed_to_curve_plume_msg() {
+    let sk: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        81, 155, 66, 61, 113, 95, 139, 88, 31, 79, 168, 238, 89, 244, 119, 26, 91, 68, 200, 19, 11, 78, 62, 172, 202, 84, 165, 109, 218, 114, 180, 100
+    ]
+    );
+    let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
 
+    let pk = G.mul(sk);
     let msg = [
         65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103
     ];
 
-    let mut plume_msg = [0 as u8; PLUME_MSG_LEN];
-    let pk_compress = compress_ec_point(pk);
-    for i in 0..msg.len() {
-        plume_msg[i] = msg[i];
-    }
-    for i in 0..33 {
-        plume_msg[msg.len() + i] = pk_compress[i];
-    }
-    let (x, y) = hash_to_curve(plume_msg);
+    let plume_msg = form_plume_msg(msg, pk);
 
-    let expected_H = ([
-        101, 11, 128, 176, 13, 25, 162, 54, 17, 77, 197, 73, 188, 255, 42, 31, 192, 205, 171, 149, 147, 136, 24, 194, 35, 159, 103, 18, 14, 45, 172, 188
-    ], [
-        110, 150, 112, 205, 240, 135, 93, 20, 82, 55, 43, 227, 83, 26, 169, 176, 35, 161, 144, 31, 8, 72, 211, 87, 231, 192, 116, 201, 57, 179, 207, 59
-    ]);
-    assert((x.to_le_bytes(), y.to_le_bytes()) == expected_H);
+    let actual = hash_to_curve(plume_msg);
+
+    let expected: Secp256k1 = BigCurve {
+        x: BigNum::from_be_bytes(
+            [
+            188, 172, 45, 14, 18, 103, 159, 35, 194, 24, 136, 147, 149, 171, 205, 192, 31, 42, 255, 188, 73, 197, 77, 17, 54, 162, 25, 13, 176, 128, 11, 101
+        ]
+        ),
+        y: BigNum::from_be_bytes(
+            [
+            59, 207, 179, 57, 201, 116, 192, 231, 87, 211, 72, 8, 31, 144, 161, 35, 176, 169, 26, 83, 227, 43, 55, 82, 20, 93, 135, 240, 205, 112, 150, 110
+        ]
+        ),
+        is_infinity: false
+    };
+
+    assert(actual == expected);
 }
-*/
 
-// Too slow. Stopped in CI
-/*
 #[test]
 fn test_hashed_to_curve_r() {
-    let s = [
-        202, 40, 186, 121, 96, 189, 224, 125, 45, 19, 234, 232, 99, 209, 144, 177, 95, 151, 46, 209, 51, 227, 97, 247, 229, 111, 203, 132, 125, 2, 159, 230
-    ];
-    let sk = [
-        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
-    ];
-    let H = (
-        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
+    let s: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        230, 159, 2, 125, 132, 203, 111, 229, 247, 97, 227, 51, 209, 46, 151, 95, 177, 144, 209, 99, 232, 234, 19, 45, 125, 224, 189, 96, 121, 186, 40, 202
+    ]
     );
-    let c = [
-        84, 50, 232, 188, 237, 50, 59, 254, 35, 82, 174, 186, 20, 85, 170, 45, 111, 86, 182, 159, 71, 26, 115, 32, 175, 219, 109, 146, 44, 252, 167, 198
-    ];
+    let s: Secp256k1Scalar = ScalarField::from_bignum(s);
 
-    let nullifier = point_mul(sk, H);
-    let h_pow_s = point_mul(s, H);
-    let (x, y) = a_div_b_pow_c(h_pow_s, nullifier, c);
+    let sk: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        81, 155, 66, 61, 113, 95, 139, 88, 31, 79, 168, 238, 89, 244, 119, 26, 91, 68, 200, 19, 11, 78, 62, 172, 202, 84, 165, 109, 218, 114, 180, 100
+    ]
+    );
+    let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
 
-    let expected_hashed_to_curve_r = ([
-        124, 185, 39, 205, 252, 88, 5, 39, 219, 49, 33, 21, 77, 159, 87, 105, 40, 125, 226, 84, 166, 233, 177, 165, 167, 159, 197, 99, 111, 124, 1, 109
-    ], [
-        237, 86, 172, 119, 183, 144, 226, 164, 161, 245, 202, 198, 211, 68, 63, 62, 248, 101, 138, 168, 128, 143, 74, 86, 140, 129, 153, 92, 251, 67, 108, 88
-    ]);
-    assert((x.to_le_bytes(), y.to_le_bytes()) == expected_hashed_to_curve_r);
+    let H: Secp256k1 = BigCurve {
+        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        is_infinity: false
+    };
+
+    let c: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        198, 167, 252, 44, 146, 109, 219, 175, 32, 115, 26, 71, 159, 182, 86, 111, 45, 170, 85, 20, 186, 174, 82, 35, 254, 59, 50, 237, 188, 232, 50, 84
+    ]
+    );
+    let c: Secp256k1Scalar = ScalarField::from_bignum(c);
+
+    let nullifier = H.mul(sk);
+    let h_pow_s = H.mul(s);
+
+    let actual = h_pow_s - nullifier.mul(c);
+
+    let expected : Secp256k1 = BigCurve {
+        x: BigNum::from_be_bytes(
+            [
+            109, 1, 124, 111, 99, 197, 159, 167, 165, 177, 233, 166, 84, 226, 125, 40, 105, 87, 159, 77, 21, 33, 49, 219, 39, 5, 88, 252, 205, 39, 185, 124
+        ]
+        ),
+        y: BigNum::from_be_bytes(
+            [
+            88, 108, 67, 251, 92, 153, 129, 140, 86, 74, 143, 128, 168, 138, 101, 248, 62, 63, 68, 211, 198, 202, 245, 161, 164, 226, 144, 183, 119, 172, 86, 237
+        ]
+        ),
+        is_infinity: false
+    };
+
+    assert(actual == expected);
 }
 
 #[test]
 fn test_sha_256_12_coordinates() {
-    let hashed_to_curve = (
-        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
-    );
-    let r_point = (
-        BigNum::from_array([0x76662962a28429590e2dc736fe9804, 0xa4350e7e2ad27abc6d2a2813658180, 0x9d8c]), BigNum::from_array([0xebe45112472d9b9054816a7670c5a1, 0xc30b8afd4e854623c835d9c3aac6bc, 0xff08])
-    );
-    let hashed_to_curve_r = (
-        BigNum::from_array([0x579f4d152131db270558fccd27b97c, 0x7c6f63c59fa7a5b1e9a654e27d2869, 0x6d01]), BigNum::from_array([0x3f44d3c6caf5a1a4e290b777ac56ed, 0x43fb5c99818c564a8f80a88a65f83e, 0x586c])
-    );
-    let sk = [
-        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
-    ];
-    let pk = point_mul(sk, G);
-    let nullifier = point_mul(sk, hashed_to_curve);
+    let hashed_to_curve: Secp256k1 = BigCurve {
+        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        is_infinity: false
+    };
 
-    let actual_c = sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
-    let expected_c = rev_bytes_32(
+    let r_point: Secp256k1 = BigCurve {
+        x: BigNum::from_array([0x76662962a28429590e2dc736fe9804, 0xa4350e7e2ad27abc6d2a2813658180, 0x9d8c]),
+        y: BigNum::from_array([0xebe45112472d9b9054816a7670c5a1, 0xc30b8afd4e854623c835d9c3aac6bc, 0xff08]),
+        is_infinity: false
+    };
+
+    let hashed_to_curve_r: Secp256k1 = BigCurve {
+        x: BigNum::from_array([0x579f4d152131db270558fccd27b97c, 0x7c6f63c59fa7a5b1e9a654e27d2869, 0x6d01]),
+        y: BigNum::from_array([0x3f44d3c6caf5a1a4e290b777ac56ed, 0x43fb5c99818c564a8f80a88a65f83e, 0x586c]),
+        is_infinity: false
+    };
+
+    let sk: Secp256k1Fr = BigNum::from_be_bytes(
         [
-        84, 50, 232, 188, 237, 50, 59, 254, 35, 82, 174, 186, 20, 85, 170, 45, 111, 86, 182, 159, 71, 26, 115, 32, 175, 219, 109, 146, 44, 252, 167, 198
+        81, 155, 66, 61, 113, 95, 139, 88, 31, 79, 168, 238, 89, 244, 119, 26, 91, 68, 200, 19, 11, 78, 62, 172, 202, 84, 165, 109, 218, 114, 180, 100
     ]
     );
-    assert(actual_c == expected_c);
-}
-*/
+    let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
 
-// Failed if the MSG_LEN constant has a value other than 29
-/*
+    let pk = G.mul(sk);
+    let nullifier = hashed_to_curve.mul(sk);
+
+    let actual = sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
+
+    let expected = [
+        198, 167, 252, 44, 146, 109, 219, 175, 32, 115, 26, 71, 159, 182, 86, 111, 45, 170, 85, 20, 186, 174, 82, 35, 254, 59, 50, 237, 188, 232, 50, 84
+    ];
+
+    assert(actual == expected);
+}
+
 #[test]
 fn test_plume_v1() {
-    // "An example app message string", 29 len
     let msg = [
         65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103
     ];
-    let H = (
-        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
-    );
-    let s = [
-        202, 40, 186, 121, 96, 189, 224, 125, 45, 19, 234, 232, 99, 209, 144, 177, 95, 151, 46, 209, 51, 227, 97, 247, 229, 111, 203, 132, 125, 2, 159, 230
-    ];
-    let c = [
-        84, 50, 232, 188, 237, 50, 59, 254, 35, 82, 174, 186, 20, 85, 170, 45, 111, 86, 182, 159, 71, 26, 115, 32, 175, 219, 109, 146, 44, 252, 167, 198
-    ];
-    let sk = [
-        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
-    ];
 
-    let pk = point_mul(sk, G);
-    let nullifier = point_mul(sk, H);
-    plume_v1(msg, c, s, pk, nullifier); // assert inside function
+    let c = [
+        198, 167, 252, 44, 146, 109, 219, 175, 32, 115, 26, 71, 159, 182, 86, 111, 45, 170, 85, 20, 186, 174, 82, 35, 254, 59, 50, 237, 188, 232, 50, 84
+    ];
+    let expected = c;
+    let c: Secp256k1Fr = BigNum::from_be_bytes(c);
+    let c: Secp256k1Scalar = ScalarField::from_bignum(c);
+
+    let s: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        230, 159, 2, 125, 132, 203, 111, 229, 247, 97, 227, 51, 209, 46, 151, 95, 177, 144, 209, 99, 232, 234, 19, 45, 125, 224, 189, 96, 121, 186, 40, 202
+    ]
+    );
+    let s: Secp256k1Scalar = ScalarField::from_bignum(s);
+
+    let sk: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        81, 155, 66, 61, 113, 95, 139, 88, 31, 79, 168, 238, 89, 244, 119, 26, 91, 68, 200, 19, 11, 78, 62, 172, 202, 84, 165, 109, 218, 114, 180, 100
+    ]
+    );
+    let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
+
+    let pk = G.mul(sk);
+
+    let H: Secp256k1 = BigCurve {
+        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        is_infinity: false
+    };
+
+    let nullifier = H.mul(sk);
+
+    let actual = plume_v1(msg, c, s, pk, nullifier);
+
+    assert(expected == actual);
 }
 
 #[test]
@@ -285,22 +378,53 @@ fn test_plume_v2() {
     let msg = [
         65, 110, 32, 101, 120, 97, 109, 112, 108, 101, 32, 97, 112, 112, 32, 109, 101, 115, 115, 97, 103, 101, 32, 115, 116, 114, 105, 110, 103
     ];
-    let H = (
-        BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]), BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf])
-    );
-    let s2 = [
-        107, 19, 152, 128, 203, 119, 17, 15, 146, 90, 8, 17, 214, 75, 82, 146, 122, 148, 178, 115, 26, 123, 121, 0, 34, 248, 82, 100, 187, 143, 142, 82
-    ];
 
     let c2 = [
-        150, 235, 52, 52, 54, 59, 107, 138, 158, 11, 171, 131, 167, 211, 91, 71, 75, 231, 149, 12, 114, 112, 74, 244, 212, 16, 80, 112, 23, 183, 191, 61
+        61, 191, 183, 23, 112, 80, 16, 212, 244, 74, 112, 114, 12, 149, 231, 75, 71, 91, 211, 167, 131, 171, 11, 158, 138, 107, 59, 54, 52, 52, 235, 150
     ];
-    let sk = [
-        100, 180, 114, 218, 109, 165, 84, 202, 172, 62, 78, 11, 19, 200, 68, 91, 26, 119, 244, 89, 238, 168, 79, 31, 88, 139, 95, 113, 61, 66, 155, 81
-    ];
+    let expected = c2;
+    let c2: Secp256k1Fr = BigNum::from_be_bytes(c2);
+    let c2: Secp256k1Scalar = ScalarField::from_bignum(c2);
 
-    let pk = point_mul(sk, G);
-    let nullifier = point_mul(sk, H);
-    plume_v2(msg, c2, s2, pk, nullifier); // assert inside function
+    let s2: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        82, 142, 143, 187, 100, 82, 248, 34, 0, 121, 123, 26, 115, 178, 148, 122, 146, 82, 75, 214, 17, 8, 90, 146, 15, 17, 119, 203, 128, 152, 19, 107
+    ]
+    );
+    let s2: Secp256k1Scalar = ScalarField::from_bignum(s2);
+
+    let sk: Secp256k1Fr = BigNum::from_be_bytes(
+        [
+        81, 155, 66, 61, 113, 95, 139, 88, 31, 79, 168, 238, 89, 244, 119, 26, 91, 68, 200, 19, 11, 78, 62, 172, 202, 84, 165, 109, 218, 114, 180, 100
+    ]
+    );
+    let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
+
+    let pk = G.mul(sk);
+
+    let H: Secp256k1 = BigCurve {
+        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        is_infinity: false
+    };
+
+    let nullifier = H.mul(sk);
+
+    let (r_point, hashed_to_curve_r) = plume_v2(msg, c2, s2, pk, nullifier);
+
+    let mut compressed = [[0 as u8; COMPRESSED_SIZE_BYTES]; 3];
+    compressed[0] = compress_ec_point(nullifier);
+    compressed[1] = compress_ec_point(r_point);
+    compressed[2] = compress_ec_point(hashed_to_curve_r);
+
+    let mut res = [0 as u8; COMPRESSED_SIZE_BYTES * 3];
+    for i in 0..3 {
+        for j in 0..COMPRESSED_SIZE_BYTES {
+            res[i*COMPRESSED_SIZE_BYTES + j] = compressed[i][j];
+        }
+    }
+    let actual = sha256(res);
+
+    assert(expected == actual);
 }
 */

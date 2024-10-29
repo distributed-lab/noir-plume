@@ -20,9 +20,13 @@ def format_array(arr):
 def format_double_array(pk):
     return "[" + ", ".join(format_array(subarr) for subarr in pk) + "]"
 
-def update_prover_toml(filepath, version1: bool, msg_len: int):
-    data = toml.load(filepath)
-    (msg, c, s, pk, nullifier) = plume_generate_test_case(version1, msg_len)
+def update_prover_toml(is_v1: bool, msg_len: int):
+    prover_toml_path = "../crates/use_v2/Prover.toml"
+    if is_v1:
+        prover_toml_path =  "../crates/use_v1/Prover.toml"
+
+    data = toml.load(prover_toml_path)
+    (msg, c, s, pk, nullifier) = plume_generate_test_case(is_v1, msg_len)
     
     data['c'] = c
     data['msg'] = msg
@@ -36,48 +40,29 @@ def update_prover_toml(filepath, version1: bool, msg_len: int):
     pk_str = format_double_array(pk)
     s_str = format_array(s)
     
-    with open(filepath, 'w') as f:
+    with open(prover_toml_path, 'w') as f:
         f.write(f'c = {c_str}\n')
         f.write(f'msg = {msg_str}\n')
         f.write(f'nullifier = {nullifier_str}\n')
         f.write(f'pk = {pk_str}\n')
         f.write(f's = {s_str}\n')
 
-def update_plume_version(is_v1: bool):
-    path = "../crates/use/src/"
-    # start from line 0
-    p1_line = 9
-    p2_line = 10
-
+def update_MSG_LEN_variable(is_v1: bool, msg_len: int):
+    path = "../crates/use_v2/src/"
+    if is_v1:
+        path = "../crates/use_v1/src/"
+  
     with open(path + 'main.nr', 'r') as file:
         lines = file.readlines()
-
-    if is_v1:
-        lines[p1_line] = "    plume_v1(msg, c, s, pk, nullifier);\n"
-        lines[p2_line] = "    // plume_v2(msg, c, s, pk, nullifier);\n"
-    else:
-        lines[p1_line] = "    // plume_v1(msg, c, s, pk, nullifier);\n"
-        lines[p2_line] = "    plume_v2(msg, c, s, pk, nullifier);\n"
+    
+    MSG_LEN_line = 7
+    lines[MSG_LEN_line] = f"global MSG_LEN: u32 = {msg_len};\n"
 
     with open(path + 'main.nr', 'w') as file:
         file.writelines(lines)
 
-
-def update_MSG_LEN_variable(msg_len: int):
-    path = "../crates/plume/src/"
-    with open(path + 'constants.nr', 'r') as file:
-        lines = file.readlines()
-    
-    MSG_LEN_line = 5
-    lines[MSG_LEN_line] = f"global MSG_LEN: u32 = {msg_len};\n"
-
-    with open(path + 'constants.nr', 'w') as file:
-        file.writelines(lines)
-
-
 # Take MSG_LEN number and plume version (v1 or v2)
 if __name__ == "__main__":
-    prover_toml_path = "../crates/use/Prover.toml"
     if len(sys.argv) != 3:
         print("Error: incorrect number of arguments")
         sys.exit()
@@ -91,6 +76,5 @@ if __name__ == "__main__":
     is_v1 = sys.argv[1] == versions[0]
     msg_len = int(sys.argv[2])
 
-    update_plume_version(is_v1)
-    update_MSG_LEN_variable(msg_len)
-    update_prover_toml(prover_toml_path, is_v1, msg_len)
+    update_MSG_LEN_variable(is_v1, msg_len)
+    update_prover_toml(is_v1, msg_len)
