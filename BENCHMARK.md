@@ -2,6 +2,42 @@
 
 > Computational statistics.
 
+## v2.0.0
+
+_Machine_: `MacBook Pro M2 Max 32 GB RAM 1 TB Storage`
+
+_Maximum RAM consumption_: `15 GB`
+
+### Nightly
+
+_Noir_: 0.38.0+0fc0c53ec183890370c69aa4148952b3123cb055
+
+_Barrettenberg_: 0.61.0
+
+---
+
+| Version | Message Length | ACIR Opcodes | Brillig Opcodes | Compilation Time | Execution Time | Ultra Plonk Proof Time | Ultra Plonk VK Writing Time | Ultra Plonk Verification Time | Ultra Honk Proof Time | Ultra Honk VK Writing Time | Ultra Honk Verification Time |
+|---------|----------------|--------------|-----------------|------------------|----------------|------------------------|-----------------------------|-------------------------------|-----------------------|----------------------------|------------------------------|
+| v1      | 32             | 131,108      | 504,525         | 39.561 seconds   | 17.225 seconds | 10.986 seconds         | 10.692 seconds              | 0.042 seconds                | 4.693 seconds         | 3.408 seconds              | 0.049 seconds                |
+| v2      | 32             | 129,980      | 504,091         | 39.495 seconds   | 17.297 seconds | 11.160 seconds         | 10.464 seconds              | 0.043 seconds                | 4.639 seconds         | 3.300 seconds              | 0.048 seconds                |
+| v1      | 10,000         | 171,428      | 514,493         | 56.903 seconds   | 25.853 seconds | 41.484 seconds         | 37.037 seconds              | 0.047 seconds                | 13.253 seconds        | 9.469 seconds              | 0.048 seconds                |
+| v2      | 10,000         | 170,300      | 514,059         | 57.884 seconds   | 25.965 seconds | 40.587 seconds         | 36.827 seconds              | 0.045 seconds                | 13.457 seconds        | 9.096 seconds              | 0.048 seconds                |
+
+### Stable
+
+_Noir_: 0.36.0+801c71880ecf8386a26737a5d8bb5b4cb164b2ab
+
+_Barrettenberg_: 0.58.0
+
+---
+
+| Version | Message Length | ACIR Opcodes | Brillig Opcodes | Compilation Time | Execution Time | Ultra Plonk Proof Time | Ultra Plonk VK Writing Time | Ultra Plonk Verification Time | Ultra Honk Proof Time | Ultra Honk VK Writing Time | Ultra Honk Verification Time |
+|---------|----------------|--------------|-----------------|------------------|----------------|------------------------|-----------------------------|-------------------------------|-----------------------|----------------------------|------------------------------|
+| v1 | 32 | 253689 | 484059 | 100.064 seconds | 20.297 seconds | 20.463 seconds | 18.725 seconds | 0.036 seconds | 7.058 seconds | 4.701 seconds | 0.043 seconds |
+| v2 | 32 | 251841 | 483707 | 62.891 seconds | 20.155 seconds | 20.109 seconds | 18.627 seconds | 0.037 seconds | 7.219 seconds | 4.380 seconds | 0.041 seconds |
+| v1 | 10,000 | 311503 | 494027 | 119.118 seconds | 28.322 seconds | 41.477 seconds | 37.529 seconds | 0.040 seconds | 14.187 seconds | 9.771 seconds | 0.041 seconds |
+| v2 | 10,000 | 309655 | 493675 | 83.594 seconds | 28.443 seconds | 41.999 seconds | 37.829 seconds | 0.038 seconds | 14.588 seconds | 9.760 seconds | 0.043 seconds |
+
 ## v1.0.0
 
 _Machine_: `MacBook Pro M2 Max 32 GB RAM 1 TB Storage`
