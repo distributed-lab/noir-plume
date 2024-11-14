@@ -46,7 +46,6 @@ fn test_hash_to_curve_for_empty_msg() {
 #[test]
 fn test_hash_to_curve_for_msg_abc() {
     let msg = [97, 98, 99]; // "abc"
-
     let actual_p = hash_to_curve(msg);
 
     let expected_px = [

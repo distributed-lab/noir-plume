@@ -79,7 +79,6 @@ fn compress_ec_point(p: Secp256k1) -> [u8; COMPRESSED_SIZE_BYTES] {
 
     let sign = p.y.to_le_bytes::<32>()[0] & 1;
     compressed[0] = sign + 2; // convention to encode `y` as 02 or 03
-
     for i in 0..32 {
         compressed[32 - i] = x[i];
     }
