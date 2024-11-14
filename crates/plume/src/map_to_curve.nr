@@ -11,9 +11,9 @@ use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fq, Secp256k1_Params}
 use noir_bigcurve::BigCurve;
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-13.html#section-8.7
-comptime global Z: Secp256k1Fq = BigNum::from_array([0xfffffffffffffffffffffefffffc24, 0xffffffffffffffffffffffffffffff, 0xffff]);
-comptime global A: Secp256k1Fq = BigNum::from_array([0x53d363cb6f0e5d405447c01a444533, 0x31abdd661adca08a5558f0f5d272e9, 0x3f87]);
-comptime global B: Secp256k1Fq = BigNum::from_array([0x6eb, 0, 0]);
+global Z: Secp256k1Fq = BigNum::from_slice([0xfffffffffffffffffffffefffffc24, 0xffffffffffffffffffffffffffffff, 0xffff]);
+global A: Secp256k1Fq = BigNum::from_slice([0x53d363cb6f0e5d405447c01a444533, 0x31abdd661adca08a5558f0f5d272e9, 0x3f87]);
+global B: Secp256k1Fq = BigNum::from_slice([0x6eb, 0, 0]);
 
 comptime global ONE: Secp256k1Fq = BigNum::one();
 
@@ -68,7 +68,7 @@ fn select_xy(
 
 #[test]
 fn test_inverse() {
-    let value: Secp256k1Fq = BigNum::from_array([0x387936733e29cddb43759809208354, 0xc334daf72303fb27f6aad8201a9465, 0xc6f1]);
+    let value: Secp256k1Fq = BigNum::from_slice([0x387936733e29cddb43759809208354, 0xc334daf72303fb27f6aad8201a9465, 0xc6f1]);
 
     let actual = ONE / value;
 
@@ -84,33 +84,33 @@ fn test_inverse() {
 
 #[test]
 fn test_select_xy_1() {
-    let x1: Secp256k1Fq = BigNum::from_array([123, 0, 0]);
-    let x2: Secp256k1Fq = BigNum::from_array([200, 0, 0]);
-    let gx1: Secp256k1Fq = BigNum::from_array([4, 0, 0]);
-    let gx2: Secp256k1Fq = BigNum::from_array([5, 0, 0]);
+    let x1: Secp256k1Fq = BigNum::from_slice([123, 0, 0]);
+    let x2: Secp256k1Fq = BigNum::from_slice([200, 0, 0]);
+    let gx1: Secp256k1Fq = BigNum::from_slice([4, 0, 0]);
+    let gx2: Secp256k1Fq = BigNum::from_slice([5, 0, 0]);
 
     let (actual_x, actual_y) = select_xy(x1, x2, gx1, gx2);
 
     assert(actual_x == x1);
-    assert(actual_y == BigNum::from_array([2, 0, 0]));
+    assert(actual_y == BigNum::from_slice([2, 0, 0]));
 }
 
 #[test]
 fn test_select_xy_2() {
-    let x1: Secp256k1Fq = BigNum::from_array([123, 0, 0]);
-    let x2: Secp256k1Fq = BigNum::from_array([200, 1, 0]);
-    let gx1: Secp256k1Fq = BigNum::from_array([5, 0, 0]);
-    let gx2: Secp256k1Fq = BigNum::from_array([4, 0, 0]);
+    let x1: Secp256k1Fq = BigNum::from_slice([123, 0, 0]);
+    let x2: Secp256k1Fq = BigNum::from_slice([200, 1, 0]);
+    let gx1: Secp256k1Fq = BigNum::from_slice([5, 0, 0]);
+    let gx2: Secp256k1Fq = BigNum::from_slice([4, 0, 0]);
 
     let (actual_x, actual_y) = select_xy(x1, x2, gx1, gx2);
 
     assert(actual_x == x2);
-    assert(actual_y == BigNum::from_array([2, 0, 0]));
+    assert(actual_y == BigNum::from_slice([2, 0, 0]));
 }
 
 #[test]
 fn test_map_to_curve() {
-    let u = BigNum::from_array([0x491f544767e18a4873f397b08a2b61, 0xab5d3679a1f7601e3bdf94ced1f43e, 0x128a]);
+    let u = BigNum::from_slice([0x491f544767e18a4873f397b08a2b61, 0xab5d3679a1f7601e3bdf94ced1f43e, 0x128a]);
 
     let actual_p= map_to_curve(u);
 

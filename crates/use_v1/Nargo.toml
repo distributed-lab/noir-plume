@@ -4,9 +4,9 @@ type = "bin"
 authors = ["Distributed Lab"]
 license = "MIT"
 description = "PLUME V1 usage in Noir."
-compiler_version = ">=0.35.0"
+compiler_version = ">=0.36.0"
 
 [dependencies]
 plume = { path = "../plume" }
-bignum = {tag = "v0.3.7", git = "https://github.com/noir-lang/noir-bignum"}
-noir_bigcurve = {tag = "v0.4", git = "https://github.com/noir-lang/noir_bigcurve"}
+bignum = {tag = "v0.4.1", git = "https://github.com/noir-lang/noir-bignum"}
+noir_bigcurve = {tag = "v0.5.0", git = "https://github.com/noir-lang/noir_bigcurve"}

@@ -135,8 +135,8 @@ fn test_nullifier() {
     let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
 
     let H: Secp256k1 = BigCurve {
-        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
-        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        x: BigNum::from_slice([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_slice([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
         is_infinity: false
     };
 
@@ -258,8 +258,8 @@ fn test_hashed_to_curve_r() {
     let sk: Secp256k1Scalar = ScalarField::from_bignum(sk);
 
     let H: Secp256k1 = BigCurve {
-        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
-        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        x: BigNum::from_slice([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_slice([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
         is_infinity: false
     };
 
@@ -295,20 +295,20 @@ fn test_hashed_to_curve_r() {
 #[test]
 fn test_sha_256_12_coordinates() {
     let hashed_to_curve: Secp256k1 = BigCurve {
-        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
-        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        x: BigNum::from_slice([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_slice([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
         is_infinity: false
     };
 
     let r_point: Secp256k1 = BigCurve {
-        x: BigNum::from_array([0x76662962a28429590e2dc736fe9804, 0xa4350e7e2ad27abc6d2a2813658180, 0x9d8c]),
-        y: BigNum::from_array([0xebe45112472d9b9054816a7670c5a1, 0xc30b8afd4e854623c835d9c3aac6bc, 0xff08]),
+        x: BigNum::from_slice([0x76662962a28429590e2dc736fe9804, 0xa4350e7e2ad27abc6d2a2813658180, 0x9d8c]),
+        y: BigNum::from_slice([0xebe45112472d9b9054816a7670c5a1, 0xc30b8afd4e854623c835d9c3aac6bc, 0xff08]),
         is_infinity: false
     };
 
     let hashed_to_curve_r: Secp256k1 = BigCurve {
-        x: BigNum::from_array([0x579f4d152131db270558fccd27b97c, 0x7c6f63c59fa7a5b1e9a654e27d2869, 0x6d01]),
-        y: BigNum::from_array([0x3f44d3c6caf5a1a4e290b777ac56ed, 0x43fb5c99818c564a8f80a88a65f83e, 0x586c]),
+        x: BigNum::from_slice([0x579f4d152131db270558fccd27b97c, 0x7c6f63c59fa7a5b1e9a654e27d2869, 0x6d01]),
+        y: BigNum::from_slice([0x3f44d3c6caf5a1a4e290b777ac56ed, 0x43fb5c99818c564a8f80a88a65f83e, 0x586c]),
         is_infinity: false
     };
 
@@ -361,8 +361,8 @@ fn test_plume_v1() {
     let pk = G.mul(sk);
 
     let H: Secp256k1 = BigCurve {
-        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
-        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        x: BigNum::from_slice([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_slice([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
         is_infinity: false
     };
 
@@ -403,8 +403,8 @@ fn test_plume_v2() {
     let pk = G.mul(sk);
 
     let H: Secp256k1 = BigCurve {
-        x: BigNum::from_array([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
-        y: BigNum::from_array([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
+        x: BigNum::from_slice([0x2affbc49c54d1136a2190db0800b65, 0x2d0e12679f23c218889395abcdc01f, 0xbcac]),
+        y: BigNum::from_slice([0xa91a53e32b3752145d87f0cd70966e, 0xb339c974c0e757d348081f90a123b0, 0x3bcf]),
         is_infinity: false
     };
 
