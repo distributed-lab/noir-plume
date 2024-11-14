@@ -15,14 +15,14 @@ pub fn main(
     pk_x: [u8; 32],
     pk_y: [u8; 32],
     nullifier_x: [u8; 32],
-    nullifier_y: [u8; 32]
+    nullifier_y: [u8; 32],
 ) {
     let actual_c = plume_v1(
         msg,
         as_scalar(c),
         as_scalar(s),
         as_point([pk_x, pk_y]),
-        as_point([nullifier_x, nullifier_y])
+        as_point([nullifier_x, nullifier_y]),
     );
 
     assert(c == actual_c);
