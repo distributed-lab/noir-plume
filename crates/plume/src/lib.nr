@@ -3,14 +3,15 @@ mod hash_to_field;
 mod expand_message_xmd;
 mod map_to_curve;
 mod iso_map;
+mod utils;
 
+use crate::hash_to_curve::hash_to_curve;
+use crate::utils::to_field;
 use bignum::BigNum;
 use noir_bigcurve::BigCurve;
 use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
 use noir_bigcurve::scalar_field::ScalarField;
-use std::hash::sha256;
-
-use crate::hash_to_curve::hash_to_curve;
+use std::hash::poseidon2::Poseidon2::hash;
 
 comptime global G: Secp256k1 = BigCurve::one();
 comptime global COMPRESSED_SIZE_BYTES: u32 = 33;
@@ -21,11 +22,11 @@ pub fn plume_v1<let N: u32>(
     s: Secp256k1Scalar,
     pk: Secp256k1,
     nullifier: Secp256k1,
-) -> [u8; 32] {
+) -> Field {
     let (r_point, hashed_to_curve_r, hashed_to_curve) =
         check_ec_equations(msg, c, s, pk, nullifier);
 
-    sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r)
+    poseidon_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r)
 }
 
 pub fn plume_v2<let N: u32>(
@@ -86,13 +87,13 @@ fn compress_ec_point(p: Secp256k1) -> [u8; COMPRESSED_SIZE_BYTES] {
     compressed
 }
 
-fn sha256_12_coordinates(
+fn poseidon_12_coordinates(
     pk: Secp256k1,
     h: Secp256k1,
     nullifier: Secp256k1,
     gr: Secp256k1,
     hr: Secp256k1,
-) -> [u8; 32] {
+) -> Field {
     let mut compressed = [[0 as u8; COMPRESSED_SIZE_BYTES]; 6];
     compressed[0] = compress_ec_point(G);
     compressed[1] = compress_ec_point(pk);
@@ -109,7 +110,7 @@ fn sha256_12_coordinates(
         }
     }
 
-    sha256(res)
+    hash([to_field(res)], res.len())
 }
 
 #[test]
@@ -333,7 +334,7 @@ fn test_sha_256_12_coordinates() {
     let pk = G.mul(sk);
     let nullifier = hashed_to_curve.mul(sk);
 
-    let actual = sha256_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
+    let actual = poseidon_12_coordinates(pk, hashed_to_curve, nullifier, r_point, hashed_to_curve_r);
 
     let expected = [
         198, 167, 252, 44, 146, 109, 219, 175, 32, 115, 26, 71, 159, 182, 86, 111, 45, 170, 85, 20, 186, 174, 82, 35, 254, 59, 50, 237, 188, 232, 50, 84
@@ -434,7 +435,7 @@ fn test_plume_v2() {
             res[i*COMPRESSED_SIZE_BYTES + j] = compressed[i][j];
         }
     }
-    let actual = sha256(res);
+    let actual = hash(res);
 
     assert(expected == actual);
 }

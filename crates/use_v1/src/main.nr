@@ -3,7 +3,7 @@ use noir_bigcurve::BigCurve;
 use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
 use noir_bigcurve::scalar_field::ScalarField;
 
-use plume::plume_v1;
+use plume::{plume_v1, to_field};
 
 global MSG_LEN: u32 = 32;
 
@@ -25,7 +25,7 @@ pub fn main(
         as_point([nullifier_x, nullifier_y]),
     );
 
-    assert(c == actual_c);
+    assert(to_field(c) == actual_c);
 }
 
 fn as_scalar(bytes: [u8; 32]) -> Secp256k1Scalar {
