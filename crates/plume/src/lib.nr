@@ -3,11 +3,10 @@ mod hash_to_field;
 mod expand_message_xmd;
 mod map_to_curve;
 mod iso_map;
-mod utils;
 
 use crate::hash_to_curve::hash_to_curve;
-use crate::utils::to_field;
 use bignum::BigNum;
+use nodash::array::pack_bytes;
 use noir_bigcurve::BigCurve;
 use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
 use noir_bigcurve::scalar_field::ScalarField;
@@ -110,7 +109,9 @@ fn poseidon_12_coordinates(
         }
     }
 
-    hash([to_field(res)], res.len())
+    let packed_res = pack_bytes(res);
+
+    hash(packed_res, packed_res.len())
 }
 
 #[test]

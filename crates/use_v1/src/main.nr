@@ -1,9 +1,10 @@
 use bignum::BigNum;
+use nodash::array::pack_bytes;
 use noir_bigcurve::BigCurve;
 use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
 use noir_bigcurve::scalar_field::ScalarField;
 
-use plume::{plume_v1, to_field};
+use plume::plume_v1;
 
 global MSG_LEN: u32 = 32;
 
@@ -25,7 +26,7 @@ pub fn main(
         as_point([nullifier_x, nullifier_y]),
     );
 
-    assert(to_field(c) == actual_c);
+    assert(pack_bytes(c)[0] == actual_c);
 }
 
 fn as_scalar(bytes: [u8; 32]) -> Secp256k1Scalar {
