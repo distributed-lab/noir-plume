@@ -1,4 +1,5 @@
 use bignum::BigNum;
+use nodash::array::pack_bytes;
 use noir_bigcurve::BigCurve;
 use noir_bigcurve::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
 use noir_bigcurve::scalar_field::ScalarField;
@@ -25,7 +26,7 @@ pub fn main(
         as_point([nullifier_x, nullifier_y]),
     );
 
-    assert(c == actual_c);
+    assert(pack_bytes(c)[0] == actual_c);
 }
 
 fn as_scalar(bytes: [u8; 32]) -> Secp256k1Scalar {
