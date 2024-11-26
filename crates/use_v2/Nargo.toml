@@ -9,4 +9,4 @@ compiler_version = ">=0.36.0"
 [dependencies]
 plume = { path = "../plume" }
 bignum = { tag = "v0.4.2", git = "https://github.com/noir-lang/noir-bignum" }
-noir_bigcurve = { path = "../../../honkdrop/lib/noir_bigcurve" }
+noir_bigcurve = { tag = "zpedro/v0.4.2", git = "https://github.com/noir-lang/noir_bigcurve" }
